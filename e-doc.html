@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Document Enterprise</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap');
+        body { font-family: 'Sarabun', sans-serif; background-color: #f8fafc; }
+        .doc-card { transition: all 0.2s; border: 1px solid #e2e8f0; position: relative; }
+        .doc-card:hover { border-color: #3b82f6; transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+        .swal2-input, .swal2-file { font-family: 'Sarabun', sans-serif !important; border-radius: 12px !important; }
+
+        /* icon svg */
+        .type-icon-svg { width: 48px; height: 48px; flex-shrink: 0; }
+        .type-icon-svg svg { width: 48px; height: 48px; display: block; }
+
+        /* Lightbox */
+        #lightbox { display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.88); align-items:center; justify-content:center; flex-direction:column; gap:12px; }
+        #lightbox.open { display:flex; }
+        #lightbox-close { position:absolute; top:16px; right:20px; background:rgba(255,255,255,0.15); border:none; color:#fff; font-size:24px; cursor:pointer; border-radius:50%; width:42px; height:42px; display:flex; align-items:center; justify-content:center; transition:background 0.2s; z-index:10; }
+        #lightbox-close:hover { background:rgba(255,255,255,0.3); }
+        @keyframes spin { to { transform:rotate(360deg); } }
+
+        /* Image thumb */
+
+    </style>
+</head>
+<body class="text-slate-800">
+
+<div id="lightbox" onclick="closeLightbox(event)">
+    <button id="lightbox-close" onclick="closeLightbox(null,true)"><i class="fas fa-xmark"></i></button>
+    <div id="lightbox-content" style="max-width:92vw;max-height:88vh;width:900px;position:relative;border-radius:12px;overflow:hidden;background:#111;">
+        <div id="lightbox-spinner" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#111;z-index:2;">
+            <div style="width:40px;height:40px;border:4px solid rgba(255,255,255,0.2);border-top-color:#fff;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+        </div>
+        <iframe id="lightbox-frame" src="" style="width:100%;height:80vh;border:none;display:block;" allowfullscreen
+            onload="document.getElementById('lightbox-spinner').style.display='none'"></iframe>
+    </div>
+</div>
+
+<nav class="bg-white border-b border-slate-200 sticky top-0 z-50">
+    <div class="w-full px-6 py-4 flex justify-between items-center">
+        <div class="flex items-center gap-3">
+            <div class="bg-blue-600 p-2 rounded-lg text-white shadow-lg shadow-blue-200">
+                <i class="fas fa-file-shield text-xl"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold text-slate-800 leading-none">E-DOC</h1>
+                <p class="text-[10px] text-blue-600 font-bold tracking-[0.2em] uppercase">Enterprise System</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <div id="adminBadge" class="hidden bg-orange-100 text-orange-600 px-3 py-1 rounded-full text-xs font-bold border border-orange-200">
+                <i class="fas fa-user-shield mr-1"></i> โหมดแอดมิน
+            </div>
+            <button onclick="toggleAdmin()" id="adminBtn" class="bg-slate-800 hover:bg-slate-700 text-white px-5 py-2 rounded-xl text-sm font-semibold transition shadow-md">
+                <i class="fas fa-cog mr-2"></i>จัดการระบบ
+            </button>
+        </div>
+    </div>
+</nav>
+
+<main class="w-full px-6 py-8">
+    <div class="flex flex-col lg:flex-row gap-4 mb-8 items-end">
+        <div class="flex-1 w-full">
+            <label class="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">ค้นหาเอกสาร</label>
+            <div class="relative">
+                <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                <input type="text" id="searchInput" oninput="filterData()" placeholder="ค้นหาชื่อไฟล์ หรือคำสำคัญ..."
+                    class="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition">
+            </div>
+        </div>
+        <div class="w-full lg:w-64">
+            <label class="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">หมวดหมู่</label>
+            <select id="filterCategory" onchange="filterData()" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl outline-none cursor-pointer">
+                <option value="">ทั้งหมด</option>
+            </select>
+        </div>
+        <div id="addBtnArea" class="hidden">
+            <button onclick="addDocument()" class="bg-emerald-500 hover:bg-emerald-600 text-white h-[50px] px-6 rounded-2xl font-bold transition flex items-center gap-2 shadow-lg shadow-emerald-100">
+                <i class="fas fa-cloud-arrow-up"></i> เพิ่มข้อมูล
+            </button>
+        </div>
+    </div>
+    <div id="docList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-5"></div>
+    <div id="emptyState" class="hidden py-20 text-center">
+        <i class="fas fa-folder-open text-slate-200 text-6xl mb-4"></i>
+        <p class="text-slate-400 font-medium">ไม่พบข้อมูลเอกสาร</p>
+    </div>
+</main>
+
+<script>
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyCemLCIZ1_G3MXmimKAo5FNe6ifhLbrAAT1VzLMD9N9T8GCqFpz3YwYLtLc2ey7XE/exec";
+
+let documents = [];
+let isAdmin = false;
+
+const IMAGE_TYPES = new Set(['jpg','jpeg','png','gif','webp']);
+
+// ── ไอคอนใช้ CSS SVG inline ──────────────────────────
+const ICON_B64 = {}; // ไม่ใช้แล้ว
+
+// ── Map นามสกุล → ไอคอน ───────────────────────────────
+const typeStyle = {
+    xlsx: { svgKey:'excel' }, xls: { svgKey:'excel' }, csv: { svgKey:'excel' },
+    doc:  { svgKey:'word'  }, docx:{ svgKey:'word'  },
+    ppt:  { svgKey:'ppt'   }, pptx:{ svgKey:'ppt'   },
+    rar:  { svgKey:'rar'   }, zip: { svgKey:'rar'   }, '7z':{ svgKey:'rar' },
+    mp4:  { svgKey:'video' }, mov: { svgKey:'video' }, avi: { svgKey:'video' }, mkv:{ svgKey:'video' },
+    mp3:  { svgKey:'audio' }, wav: { svgKey:'audio' }, m4a: { svgKey:'audio' },
+    jpg:  { svgKey:'photo' }, jpeg:{ svgKey:'photo' }, png: { svgKey:'photo' }, gif:{ svgKey:'photo' }, webp:{ svgKey:'photo' },
+    pdf:  { svgKey:'pdf'   },
+    link: { svgKey:'link'  },
+    default:{ svgKey:'default' },
+};
+
+// ── SVG icon definitions (ใกล้เคียงรูปต้นแบบ) ───────────────
+const ICON_SVG = {
+
+    // Excel — สีเขียว กล่องมีตาราง
+    excel: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+        <rect width="48" height="48" rx="8" fill="#1D6F42"/>
+        <rect x="24" y="6" width="18" height="36" rx="3" fill="white" opacity="0.95"/>
+        <rect x="27" y="10" width="4" height="3" rx="0.5" fill="#1D6F42" opacity="0.7"/>
+        <rect x="33" y="10" width="6" height="3" rx="0.5" fill="#1D6F42" opacity="0.7"/>
+        <rect x="27" y="15" width="4" height="3" rx="0.5" fill="#1D6F42" opacity="0.5"/>
+        <rect x="33" y="15" width="6" height="3" rx="0.5" fill="#1D6F42" opacity="0.5"/>
+        <rect x="27" y="20" width="4" height="3" rx="0.5" fill="#1D6F42" opacity="0.7"/>
+        <rect x="33" y="20" width="6" height="3" rx="0.5" fill="#1D6F42" opacity="0.7"/>
+        <rect x="27" y="25" width="4" height="3" rx="0.5" fill="#1D6F42" opacity="0.5"/>
+        <rect x="33" y="25" width="6" height="3" rx="0.5" fill="#1D6F42" opacity="0.5"/>
+        <rect x="27" y="30" width="4" height="3" rx="0.5" fill="#1D6F42" opacity="0.7"/>
+        <rect x="33" y="30" width="6" height="3" rx="0.5" fill="#1D6F42" opacity="0.7"/>
+        <rect x="5" y="8" width="22" height="32" rx="3" fill="#217346"/>
+        <text x="16" y="30" font-size="18" font-weight="bold" fill="white" text-anchor="middle" font-family="Arial">X</text>
+    </svg>`,
+
+    // Word — สีน้ำเงิน กล่องมีเส้น
+    word: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+        <rect width="48" height="48" rx="8" fill="#2B579A"/>
+        <rect x="24" y="6" width="18" height="36" rx="3" fill="white" opacity="0.95"/>
+        <rect x="27" y="11" width="12" height="2" rx="1" fill="#2B579A" opacity="0.6"/>
+        <rect x="27" y="16" width="12" height="2" rx="1" fill="#2B579A" opacity="0.4"/>
+        <rect x="27" y="21" width="9" height="2" rx="1" fill="#2B579A" opacity="0.6"/>
+        <rect x="27" y="26" width="12" height="2" rx="1" fill="#2B579A" opacity="0.4"/>
+        <rect x="27" y="31" width="10" height="2" rx="1" fill="#2B579A" opacity="0.6"/>
+        <rect x="27" y="36" width="7" height="2" rx="1" fill="#2B579A" opacity="0.4"/>
+        <rect x="5" y="8" width="22" height="32" rx="3" fill="#2B579A"/>
+        <text x="16" y="30" font-size="18" font-weight="bold" fill="white" text-anchor="middle" font-family="Arial">W</text>
+    </svg>`,
+
+    // PowerPoint — สีส้มแดง มีวงกลม pie chart
+    ppt: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+        <rect width="48" height="48" rx="8" fill="#C43E1C"/>
+        <rect x="24" y="6" width="18" height="36" rx="3" fill="white" opacity="0.95"/>
+        <circle cx="35" cy="20" r="7" fill="none" stroke="#C43E1C" stroke-width="2" opacity="0.25"/>
+        <path d="M35 13 A7 7 0 0 1 42 20 L35 20 Z" fill="#C43E1C" opacity="0.7"/>
+        <path d="M35 20 L42 20 A7 7 0 0 1 35 27 Z" fill="#C43E1C" opacity="0.4"/>
+        <rect x="28" y="30" width="12" height="2" rx="1" fill="#C43E1C" opacity="0.5"/>
+        <rect x="28" y="34" width="9" height="2" rx="1" fill="#C43E1C" opacity="0.35"/>
+        <rect x="5" y="8" width="22" height="32" rx="3" fill="#C43E1C"/>
+        <text x="16" y="30" font-size="18" font-weight="bold" fill="white" text-anchor="middle" font-family="Arial">P</text>
+    </svg>`,
+
+    // RAR/ZIP — 3 กระบอกสีแดง/น้ำเงิน/เขียว + สายรัด
+    rar: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+        <ellipse cx="24" cy="12" rx="17" ry="5.5" fill="#c0392b"/>
+        <rect x="7" y="12" width="34" height="9" fill="#c0392b"/>
+        <ellipse cx="24" cy="21" rx="17" ry="5.5" fill="#c0392b"/>
+        <ellipse cx="24" cy="21" rx="17" ry="5.5" fill="#2980b9"/>
+        <rect x="7" y="21" width="34" height="9" fill="#2980b9"/>
+        <ellipse cx="24" cy="30" rx="17" ry="5.5" fill="#2980b9"/>
+        <ellipse cx="24" cy="30" rx="17" ry="5.5" fill="#27ae60"/>
+        <rect x="7" y="30" width="34" height="9" fill="#27ae60"/>
+        <ellipse cx="24" cy="39" rx="17" ry="5.5" fill="#27ae60"/>
+        <rect x="20" y="6" width="8" height="36" fill="#d4860a"/>
+        <ellipse cx="24" cy="24" rx="4" ry="4" fill="none" stroke="#f0c040" stroke-width="1"/>
+        <circle cx="24" cy="24" r="2" fill="#f0c040"/>
+        <rect x="22" y="6" width="4" height="36" fill="#e0a020" opacity="0.5"/>
+    </svg>`,
+
+    // Video — วงกลมน้ำเงิน กล้องวิดีโอ
+    video: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="24" cy="24" r="23" fill="#2196F3"/>
+        <circle cx="24" cy="24" r="23" fill="url(#vgrad)"/>
+        <defs>
+            <linearGradient id="vgrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#42A5F5"/>
+                <stop offset="100%" stop-color="#1565C0"/>
+            </linearGradient>
+        </defs>
+        <rect x="9" y="16" width="22" height="16" rx="3" fill="white"/>
+        <polygon points="32,18 40,13 40,35 32,30" fill="white"/>
+        <circle cx="24" cy="24" r="23" fill="none" stroke="#1976D2" stroke-width="0.5" opacity="0.3"/>
+    </svg>`,
+
+    // Audio — ไฟล์สีขาว + โน้ตเพลงสีฟ้า
+    audio: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+        <rect x="4" y="2" width="30" height="38" rx="3" fill="white" stroke="#d0d8e8" stroke-width="1"/>
+        <rect x="4" y="2" width="30" height="9" rx="3" fill="#5DADE2"/>
+        <rect x="4" y="8" width="30" height="3" fill="#5DADE2"/>
+        <text x="19" y="10" font-size="7" font-weight="bold" fill="white" text-anchor="middle" font-family="Arial">AUDIO</text>
+        <text x="19" y="32" font-size="20" fill="#5DADE2" text-anchor="middle" font-family="serif">♫</text>
+    </svg>`,
+
+    // Photo — วงกลมเขียวน้ำ กรอบรูป ภูเขา
+    photo: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="24" cy="24" r="23" fill="#4DB6AC"/>
+        <circle cx="24" cy="24" r="23" fill="url(#pgrad)"/>
+        <defs>
+            <linearGradient id="pgrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#4DB6AC"/>
+                <stop offset="100%" stop-color="#00897B"/>
+            </linearGradient>
+        </defs>
+        <rect x="11" y="11" width="26" height="26" rx="1" fill="white"/>
+        <rect x="13" y="13" width="22" height="20" fill="#4DB6AC" opacity="0.3"/>
+        <polygon points="13,33 20,22 25,28 30,23 35,33" fill="#455A64" opacity="0.8"/>
+        <circle cx="20" cy="19" r="2.5" fill="#F9A825"/>
+        <rect x="9" y="9" width="30" height="30" rx="2" fill="none" stroke="white" stroke-width="2.5"/>
+        <rect x="11" y="35" width="26" height="4" fill="white" opacity="0.9"/>
+    </svg>`,
+
+    // PDF — สีแดง
+    pdf: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+        <rect x="4" y="2" width="30" height="40" rx="3" fill="#F44336"/>
+        <rect x="4" y="2" width="30" height="12" rx="3" fill="#B71C1C"/>
+        <rect x="4" y="10" width="30" height="4" fill="#B71C1C"/>
+        <text x="19" y="12" font-size="6" font-weight="bold" fill="white" text-anchor="middle" font-family="Arial">PDF</text>
+        <text x="19" y="33" font-size="10" font-weight="bold" fill="white" text-anchor="middle" font-family="Arial">PDF</text>
+        <rect x="30" y="2" width="14" height="14" rx="2" fill="#FFCDD2"/>
+        <path d="M30 2 L44 16 L30 16 Z" fill="#EF9A9A"/>
+        <path d="M30 2 L30 16 L44 16" fill="none" stroke="#F44336" stroke-width="1"/>
+    </svg>`,
+
+    // Link — สีน้ำเงิน chain
+    link: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="24" cy="24" r="22" fill="#1E88E5"/>
+        <path d="M20 18 L16 18 A8 8 0 0 0 16 34 L20 34 L20 30 L16 30 A4 4 0 0 1 16 22 L20 22 Z" fill="white"/>
+        <path d="M28 18 L32 18 A8 8 0 0 1 32 34 L28 34 L28 30 L32 30 A4 4 0 0 0 32 22 L28 22 Z" fill="white"/>
+        <rect x="18" y="22" width="12" height="4" rx="2" fill="white"/>
+    </svg>`,
+
+    // Default
+    default: `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+        <rect x="4" y="2" width="30" height="40" rx="3" fill="#90A4AE"/>
+        <rect x="16" y="16" width="14" height="2" rx="1" fill="white" opacity="0.8"/>
+        <rect x="10" y="21" width="20" height="2" rx="1" fill="white" opacity="0.6"/>
+        <rect x="10" y="26" width="17" height="2" rx="1" fill="white" opacity="0.8"/>
+        <rect x="10" y="31" width="20" height="2" rx="1" fill="white" opacity="0.6"/>
+        <rect x="30" y="2" width="14" height="14" rx="2" fill="#B0BEC5"/>
+        <path d="M30 2 L44 16 L30 16 Z" fill="#90A4AE"/>
+    </svg>`,
+};
+
+function getIconHTML(docType) {
+    const type = (docType||'').toLowerCase();
+    const s = typeStyle[type] || typeStyle.default;
+    const svgKey = s.imgKey || s.svgKey || type;
+    const svg = ICON_SVG[svgKey] || ICON_SVG[s.icon === 'fa-file-pdf' ? 'pdf' : (s.icon === 'fa-link' ? 'link' : 'default')];
+    return `<div class="type-icon-svg" title="${docType}">${svg}</div>`;
+}
+
+function toThaiDate(raw) {
+    if (!raw) return '-';
+    let day, month, year;
+    const isoMatch = String(raw).match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (isoMatch) {
+        year = parseInt(isoMatch[1]); month = parseInt(isoMatch[2]); day = parseInt(isoMatch[3]);
+    } else {
+        const d = new Date(raw);
+        if (!isNaN(d.getTime())) { day=d.getDate(); month=d.getMonth()+1; year=d.getFullYear(); }
+        else return String(raw);
+    }
+    if (year < 2500) year += 543;
+    return `${day}-${month}-${year}`;
+}
+
+function toTimestamp(raw) {
+    if (!raw) return 0;
+    const isoMatch = String(raw).match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (isoMatch) return new Date(`${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`).getTime();
+    const d = new Date(raw);
+    return isNaN(d.getTime()) ? 0 : d.getTime();
+}
+
+function toDrivePreviewUrl(url) {
+    // Google Drive /file/d/ID/view → /file/d/ID/preview
+    const m = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]{10,})/);
+    if (m) return 'https://drive.google.com/file/d/' + m[1] + '/preview';
+    // open?id= or uc?id=
+    const m2 = url.match(/[?&]id=([a-zA-Z0-9_-]{10,})/);
+    if (m2) return 'https://drive.google.com/file/d/' + m2[1] + '/preview';
+    return url;
+}
+function openLightbox(url) {
+    const previewUrl = toDrivePreviewUrl(url);
+    const frame = document.getElementById('lightbox-frame');
+    const spinner = document.getElementById('lightbox-spinner');
+    spinner.style.display = 'flex';
+    frame.src = previewUrl;
+    document.getElementById('lightbox').classList.add('open');
+    document.body.style.overflow = 'hidden';
+}
+function closeLightbox(e, force=false) {
+    if (force || (e && e.target === document.getElementById('lightbox'))) {
+        document.getElementById('lightbox').classList.remove('open');
+        document.getElementById('lightbox-frame').src = '';
+        document.getElementById('lightbox-spinner').style.display = 'flex';
+        document.body.style.overflow = '';
+    }
+}
+document.addEventListener('keydown', e => { if(e.key==='Escape') closeLightbox(null,true); });
+
+async function init() { await loadDataFromSheet(); }
+
+async function loadDataFromSheet() {
+    try {
+        const res = await fetch(SCRIPT_URL, { method:'POST', body: JSON.stringify({action:'getList'}) });
+        const result = await res.json();
+        if (result.status === 'success') {
+            documents = result.data.sort((a,b) => toTimestamp(b.date) - toTimestamp(a.date));
+            updateCategoryDropdown();
+            renderList();
+        }
+    } catch(err) { console.error("Fetch Error:", err); }
+}
+
+function renderList() {
+    const container = document.getElementById("docList");
+    const empty = document.getElementById("emptyState");
+    const search = document.getElementById("searchInput").value.toLowerCase();
+    const cat = document.getElementById("filterCategory").value;
+
+    const filtered = documents.filter(d =>
+        d.name.toLowerCase().includes(search) && (cat === "" || d.category === cat)
+    );
+
+    container.innerHTML = "";
+    if (filtered.length === 0) {
+        empty.classList.remove('hidden');
+    } else {
+        empty.classList.add('hidden');
+        filtered.forEach(doc => {
+            const isImage = IMAGE_TYPES.has((doc.type||'').toLowerCase());
+            const displayDate = toThaiDate(doc.date);
+
+            const deleteBtn = isAdmin ? `
+                <button onclick="deleteDoc('${doc.id}')" class="absolute top-2 right-2 w-7 h-7 bg-red-50 text-red-500 hover:bg-red-500 hover:text-white rounded-full transition flex items-center justify-center border border-red-100 shadow-sm z-10">
+                    <i class="fas fa-trash-can text-[10px]"></i>
+                </button>` : '';
+
+            const imagePreview = ''; // thumbnail removed
+
+            const actionButtons = isImage ? `
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="openLightbox('${doc.url}')" class="flex items-center justify-center gap-2 py-2 rounded-xl bg-pink-50 text-pink-600 hover:bg-pink-100 transition border border-pink-100 text-[11px] font-bold">
+                        <i class="fas fa-image"></i> ดูรูป
+                    </button>
+                    <a href="${doc.url}" target="_blank" class="flex items-center justify-center gap-2 py-2 rounded-xl bg-emerald-500 text-white text-[11px] font-bold hover:bg-emerald-600 transition shadow-md">
+                        <i class="fas fa-download"></i> ดาวน์โหลด
+                    </a>
+                </div>` : `
+                <div class="grid grid-cols-2 gap-2">
+                    <a href="${doc.url}" target="_blank" class="flex items-center justify-center gap-2 py-2 rounded-xl bg-slate-50 text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition border border-slate-100 text-[11px] font-bold">
+                        <i class="fas fa-eye"></i> ดูตัวอย่าง
+                    </a>
+                    <a href="${doc.url}" target="_blank" class="flex items-center justify-center gap-2 py-2 rounded-xl bg-emerald-500 text-white text-[11px] font-bold hover:bg-emerald-600 transition shadow-md">
+                        <i class="fas fa-download"></i> ดาวน์โหลด
+                    </a>
+                </div>`;
+
+            container.innerHTML += `
+                <div class="doc-card bg-white p-5 rounded-2xl flex flex-col overflow-hidden">
+                    ${deleteBtn}
+                    ${imagePreview}
+                    <div class="flex items-start gap-4 mb-6">
+                        ${getIconHTML(doc.type)}
+                        <div class="min-w-0 pr-4">
+                            <h4 class="font-bold text-slate-800 text-sm leading-snug mb-1 line-clamp-2" title="${doc.name}">${doc.name}</h4>
+                            <span class="inline-block text-[9px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md uppercase tracking-wider border border-blue-100">${doc.category}</span>
+                        </div>
+                    </div>
+                    <div class="pt-4 border-t border-slate-50 flex flex-col gap-3">
+                        <div>
+                            <p class="text-[9px] uppercase font-bold text-slate-400 tracking-tight">บันทึกเมื่อ</p>
+                            <p class="text-[11px] font-semibold text-slate-600">${displayDate}</p>
+                        </div>
+                        ${actionButtons}
+                    </div>
+                </div>`;
+        });
+    }
+}
+
+function updateCategoryDropdown() {
+    const select = document.getElementById("filterCategory");
+    const currentVal = select.value;
+    const defaultCats = ["เอกสาร","รูปภาพ","มัลติมีเดีย"];
+    const dynamicCats = [...new Set(documents.map(d => d.category))];
+    const allCats = [...new Set([...defaultCats, ...dynamicCats])];
+    select.innerHTML = '<option value="">ทั้งหมด</option>';
+    allCats.forEach(c => { if(c) select.innerHTML += `<option value="${c}">${c}</option>`; });
+    select.value = currentVal;
+}
+
+function filterData() { renderList(); }
+
+async function toggleAdmin() {
+    if (!isAdmin) {
+        const { value: password } = await Swal.fire({
+            title: 'รหัสผ่านแอดมิน', input: 'password',
+            inputPlaceholder: 'กรอกรหัสผ่านเพื่อจัดการระบบ',
+            showCancelButton: true, confirmButtonText: 'ยืนยัน', confirmButtonColor: '#3b82f6'
+        });
+        if (password) {
+            Swal.fire({ title: 'กำลังตรวจสอบ...', didOpen: () => Swal.showLoading() });
+            try {
+                const res = await fetch(SCRIPT_URL, { method:'POST', body: JSON.stringify({action:'checkAuth', password}) });
+                const r = await res.json();
+                if (r.status === 'success') { isAdmin=true; applyAdminUI(); Swal.fire({icon:'success',title:'เข้าสู่โหมดแอดมิน',timer:1000,showConfirmButton:false}); }
+                else Swal.fire('ล้มเหลว','รหัสผ่านไม่ถูกต้อง','error');
+            } catch(e) { Swal.fire('Error','การเชื่อมต่อผิดพลาด','error'); }
+        }
+    } else { isAdmin=false; applyAdminUI(); }
+}
+
+function applyAdminUI() {
+    document.getElementById("adminBadge").classList.toggle('hidden',!isAdmin);
+    document.getElementById("addBtnArea").classList.toggle('hidden',!isAdmin);
+    const btn = document.getElementById("adminBtn");
+    btn.innerHTML = isAdmin ? '<i class="fas fa-sign-out-alt mr-2"></i>ปิดโหมดแอดมิน' : '<i class="fas fa-cog mr-2"></i>จัดการระบบ';
+    btn.className = isAdmin ? 'bg-orange-500 hover:bg-orange-600 text-white px-5 py-2 rounded-xl text-sm font-semibold transition shadow-md' : 'bg-slate-800 hover:bg-slate-700 text-white px-5 py-2 rounded-xl text-sm font-semibold transition shadow-md';
+    renderList();
+}
+
+async function addDocument() {
+    let uploadType = 'file';
+    const { value: formValues } = await Swal.fire({
+        title: 'เพิ่มข้อมูลใหม่',
+        html: `<div id="swal-container" class="text-left mt-4">
+            <div class="flex justify-between items-center mb-2">
+                <label id="input-label" class="text-[11px] font-bold text-slate-400 uppercase">1. เลือกไฟล์ (ไม่เกิน 20MB)</label>
+                <button type="button" id="toggle-method" class="text-[10px] text-blue-600 font-bold hover:underline">สลับไปวางลิงก์แทน</button>
+            </div>
+            <div id="file-input-area"><input id="swal-file" type="file" class="swal2-file !m-0 !w-full !text-sm border-slate-200"></div>
+            <div id="link-input-area" class="hidden"><input id="swal-link" class="swal2-input !m-0 !w-full !text-sm" placeholder="วางลิงก์ Google Drive..."></div>
+            <div class="mt-4">
+                <label class="text-[11px] font-bold text-slate-400 uppercase">2. หมวดหมู่</label>
+                <select id="swal-cat" class="swal2-input !m-0 !mt-1 !w-full !text-sm">
+                    <option value="เอกสาร">เอกสาร</option>
+                    <option value="รูปภาพ">รูปภาพ</option>
+                    <option value="มัลติมีเดีย">มัลติมีเดีย</option>
+                </select>
+            </div></div>`,
+        showCancelButton: true, confirmButtonText: 'บันทึกข้อมูล',
+        didOpen: () => {
+            const t = document.getElementById('toggle-method');
+            t.onclick = () => {
+                uploadType = uploadType==='file' ? 'link' : 'file';
+                document.getElementById('file-input-area').classList.toggle('hidden');
+                document.getElementById('link-input-area').classList.toggle('hidden');
+                document.getElementById('input-label').innerText = uploadType==='file' ? '1. เลือกไฟล์ (ไม่เกิน 20MB)' : '1. วางลิงก์เอกสาร';
+                t.innerText = uploadType==='file' ? 'สลับไปวางลิงก์แทน' : 'สลับไปอัปโหลดไฟล์';
+            };
+        },
+        preConfirm: () => {
+            const cat = document.getElementById('swal-cat').value;
+            if (uploadType==='file') {
+                const file = document.getElementById('swal-file').files[0];
+                if (!file) return Swal.showValidationMessage('กรุณาเลือกไฟล์');
+                if (file.size > 20*1024*1024) return Swal.showValidationMessage('ไฟล์ใหญ่เกิน 20MB');
+                return { type:'file', file, category:cat };
+            } else {
+                const link = document.getElementById('swal-link').value;
+                if (!link||!link.includes('http')) return Swal.showValidationMessage('กรุณาวางลิงก์ที่ถูกต้อง');
+                return { type:'link', link, category:cat };
+            }
+        }
+    });
+    if (formValues) {
+        if (formValues.type==='file') uploadProcess(formValues.file, formValues.category);
+        else saveLinkProcess(formValues.link, formValues.category);
+    }
+}
+
+async function uploadProcess(file, category) {
+    let timerInterval;
+    Swal.fire({
+        title: 'กำลังอัปโหลดไฟล์...',
+        html: `<div class="mt-3"><div class="w-full bg-slate-100 rounded-full h-4 relative overflow-hidden"><div id="upload-progress-bar" class="bg-emerald-500 h-full transition-all duration-300" style="width:0%"></div></div><p id="upload-text" class="text-sm font-bold mt-2 text-slate-600">0%</p></div>`,
+        allowOutsideClick: false, showConfirmButton: false,
+        didOpen: () => {
+            let p=0;
+            timerInterval = setInterval(()=>{ if(p<90){p+=5; document.getElementById('upload-progress-bar').style.width=p+'%'; document.getElementById('upload-text').innerText=p+'%'; } },400);
+        }
+    });
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = async () => {
+        try {
+            const res = await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'upload',base64:reader.result,fileName:file.name,category})});
+            finishProcess(await res.json(), timerInterval);
+        } catch(e) { finishProcess({status:'error',message:e.message}, timerInterval); }
+    };
+}
+
+async function saveLinkProcess(link, category) {
+    Swal.fire({ title:'กำลังบันทึก...', didOpen:()=>Swal.showLoading() });
+    try {
+        const res = await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'upload',base64:'link',fileName:link,category})});
+        finishProcess(await res.json());
+    } catch(e) { finishProcess({status:'error',message:e.message}); }
+}
+
+async function deleteDoc(id) {
+    const result = await Swal.fire({
+        title:'ยืนยันการลบ?', text:'ข้อมูลนี้จะถูกลบออกจากระบบอย่างถาวร', icon:'warning',
+        showCancelButton:true, confirmButtonColor:'#ef4444', cancelButtonColor:'#64748b',
+        confirmButtonText:'ใช่, ลบเลย!', cancelButtonText:'ยกเลิก'
+    });
+    if (result.isConfirmed) {
+        Swal.fire({title:'กำลังลบ...',didOpen:()=>Swal.showLoading()});
+        try {
+            const res = await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'delete',id})});
+            const r = await res.json();
+            if (r.status==='success') { Swal.fire({icon:'success',title:'ลบสำเร็จ',timer:1000,showConfirmButton:false}); loadDataFromSheet(); }
+            else throw new Error(r.message);
+        } catch(e) { Swal.fire('ล้มเหลว',e.message,'error'); }
+    }
+}
+
+function finishProcess(res, interval=null) {
+    if (interval) clearInterval(interval);
+    if (res.status==='success') {
+        if(document.getElementById('upload-progress-bar')) {
+            document.getElementById('upload-progress-bar').style.width='100%';
+            document.getElementById('upload-text').innerText='100%';
+        }
+        setTimeout(()=>{ Swal.fire({icon:'success',title:'สำเร็จ!',timer:1500,showConfirmButton:false}); loadDataFromSheet(); },500);
+    } else Swal.fire('ผิดพลาด',res.message,'error');
+}
+
+init();
+</script>
+</body>
+</html>

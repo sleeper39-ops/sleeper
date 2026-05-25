@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cougar2 Docks UI</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #3498db;
+            --danger: #e74c3c;
+            --success: #27ae60;
+            --warning: #f39c12;
+            --secondary: #95a5a6;
+            --bg-body: #f0f2f5;
+            --nav-bg: #0f1923;
+            --nav-h: 58px;
+            --accent: #3498db;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            display: flex; flex-direction: column;
+            font-family: 'Sarabun', sans-serif;
+            background: var(--bg-body);
+            height: 100vh; overflow: hidden;
+        }
+
+        /* ── TOPBAR ── */
+        .topbar {
+            height: var(--nav-h); background: var(--nav-bg);
+            display: flex; align-items: center; padding: 0 20px; gap: 0;
+            flex-shrink: 0; box-shadow: 0 2px 16px rgba(0,0,0,0.35);
+            position: relative; z-index: 100;
+        }
+        .topbar-logo {
+            font-family: 'Rajdhani', sans-serif; font-size: 1.5rem; font-weight: 700;
+            color: white; letter-spacing: 2px; padding-right: 24px; margin-right: 8px;
+            border-right: 1px solid rgba(255,255,255,0.1); white-space: nowrap;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .topbar-logo span { color: var(--accent); }
+        .topbar-nav {
+            display: flex; align-items: center; flex: 1; height: 100%;
+            overflow-x: auto; scrollbar-width: none;
+        }
+        .topbar-nav::-webkit-scrollbar { display: none; }
+        .nav-item {
+            height: var(--nav-h); display: flex; align-items: center; gap: 7px;
+            padding: 0 16px; color: rgba(255,255,255,0.55); font-size: 13px;
+            font-weight: 600; cursor: pointer; white-space: nowrap;
+            border-bottom: 3px solid transparent;
+            transition: color 0.2s, border-color 0.2s, background 0.2s;
+            letter-spacing: 0.3px; user-select: none;
+        }
+        .nav-item i { font-size: 14px; }
+        .nav-item:hover { color: white; background: rgba(255,255,255,0.06); }
+        .nav-item.active { color: white; border-bottom-color: var(--accent); background: rgba(52,152,219,0.1); }
+
+        /* เมนูลิงก์ภายนอก — ใช้ <a> สไตล์เหมือน nav-item */
+        .nav-link {
+            height: var(--nav-h); display: flex; align-items: center; gap: 7px;
+            padding: 0 16px; color: rgba(255,255,255,0.55); font-size: 13px;
+            font-weight: 600; white-space: nowrap; text-decoration: none;
+            border-bottom: 3px solid transparent;
+            transition: color 0.2s, border-color 0.2s, background 0.2s;
+            letter-spacing: 0.3px;
+        }
+        .nav-link:hover { color: white; background: rgba(255,255,255,0.06); }
+        .nav-link i { font-size: 14px; }
+
+        /* ── CONTENT ── */
+        .content-wrap { flex: 1; overflow: hidden; position: relative; }
+
+        .page-content {
+            display: none; height: 100%;
+            animation: fadeUp 0.3s ease;
+        }
+        .page-content.active {
+            display: flex; flex-direction: column;
+        }
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .page-content iframe { flex: 1; border: none; width: 100%; height: 100%; }
+
+        /* ── หน้าหลัก เปล่าๆ ── */
+        #dash-page.active {
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            height: 100%; overflow-y: auto;
+        }
+
+        .home-hero {
+            text-align: center;
+        }
+        .home-hero .logo-big {
+            font-family: 'Rajdhani', sans-serif; font-size: 4rem; font-weight: 700;
+            color: #1a2a3a; letter-spacing: 4px; line-height: 1;
+            display: flex; align-items: center; justify-content: center; gap: 16px;
+        }
+        .home-hero .logo-big span { color: var(--accent); }
+        .home-hero .tagline {
+            font-size: 14px; color: #888; margin-top: 10px; letter-spacing: 1px;
+        }
+
+        /* ── Mobile ── */
+        @media (max-width: 600px) {
+            .home-hero .logo-big { font-size: 2.4rem; gap: 10px; }
+            .home-hero .logo-big i { font-size: 2rem !important; }
+            .nav-item, .nav-link { padding: 0 12px; font-size: 12px; }
+            .topbar-logo { font-size: 1.1rem; padding-right: 12px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- TOP NAV BAR -->
+<nav class="topbar">
+    <div class="topbar-logo">
+        <i class="fas fa-dog" style="color:var(--accent);font-size:1.1rem;"></i>
+        COUGAR<span>2</span>
+    </div>
+    <div class="topbar-nav">
+        <div class="nav-item active" id="nav-dash"     onclick="window.showPage('dash-page', this)"><i class="fas fa-home"></i> หน้าหลัก</div>
+        <div class="nav-item"        id="nav-resume"   onclick="window.showPage('resume-page', this)"><i class="fas fa-id-card"></i> Resume</div>
+        <div class="nav-item"        id="nav-edoc"     onclick="window.showPage('edoc-page', this)"><i class="fas fa-file-alt"></i> E-doc</div>
+        <div class="nav-item"        id="nav-live"     onclick="window.showPage('live-page', this)"><i class="fas fa-video"></i> กล้องสด</div>
+        <div class="nav-item"        id="nav-cal"      onclick="window.showPage('calendar-page', this)"><i class="fas fa-calendar-alt"></i> ปฏิทิน</div>
+        <a   class="nav-link"        href="obsdock.html"><i class="fas fa-boxes-stacked"></i> Obs Docks UI</a>
+    </div>
+</nav>
+
+<!-- CONTENT -->
+<div class="content-wrap">
+
+    <!-- หน้าหลัก เปล่าๆ -->
+    <div id="dash-page" class="page-content active">
+        <div class="home-hero">
+            <div class="logo-big"><i class="fas fa-dog" style="color:#3498db;font-size:3.2rem;"></i> COUGAR<span>2</span></div>
+            <div class="tagline">Select a menu item above to get started</div>
+        </div>
+    </div>
+    <div id="resume-page"   class="page-content"><iframe src="resume.html"></iframe></div>
+    <div id="edoc-page"     class="page-content"><iframe src="e-doc.html"></iframe></div>
+    <div id="live-page"     class="page-content"><iframe src="cctv.html"></iframe></div>
+    <div id="calendar-page" class="page-content"><iframe src="calendar.html"></iframe></div>
+   
+</div>
+
+<script>
+    window.showPage = function(id, el) {
+        document.querySelectorAll('.page-content').forEach(function(p) {
+            p.classList.remove('active');
+        });
+        var pg = document.getElementById(id);
+        if (pg) pg.classList.add('active');
+        document.querySelectorAll('.nav-item').forEach(function(a) {
+            a.classList.remove('active');
+        });
+        if (el) el.classList.add('active');
+    };
+</script>
+</body>
+</html>

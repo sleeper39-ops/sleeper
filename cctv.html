@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <style>
+        body { margin: 0; background: #f0f2f5; font-family: sans-serif; }
+        .video-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); 
+            gap: 20px; 
+            padding: 10px;
+        }
+        .cam-card { 
+            background: #000; 
+            border-radius: 15px; 
+            aspect-ratio: 16/9; 
+            position: relative; 
+            overflow: hidden; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        .video-player { width: 100%; height: 100%; object-fit: cover; }
+        .cam-label { 
+            position: absolute; top: 10px; left: 10px; 
+            background: rgba(231, 76, 60, 0.9); color: white; 
+            padding: 4px 12px; border-radius: 20px; font-size: 11px; z-index: 5; 
+        }
+    </style>
+</head>
+<body>
+    <div class="video-grid">
+        <div class="cam-card"><div class="cam-label">แยกกรมหลวง</div><video id="v1" class="video-player" autoplay muted playsinline controls></video></div>
+        <div class="cam-card"><div class="cam-label">แยกซอยจินตคาม</div><video id="v2" class="video-player" autoplay muted playsinline controls></video></div>
+        <div class="cam-card"><div class="cam-label">แยกปั้ม ปตท. ไฮเทค</div><video id="v3" class="video-player" autoplay muted playsinline controls></video></div>
+        <div class="cam-card"><div class="cam-label">แยกกองบิน (2)</div><video id="v4" class="video-player" autoplay muted playsinline controls></video></div>
+        <div class="cam-card"><div class="cam-label">แยกกองบิน (1)</div><video id="v5" class="video-player" autoplay muted playsinline controls></video></div>
+        <div class="cam-card"><div class="cam-label">มทบ.24 (1)</div><video id="v6" class="video-player" autoplay muted playsinline controls></video></div>
+        <div class="cam-card"><div class="cam-label">แยกร่วมทวี</div><video id="v7" class="video-player" autoplay muted playsinline controls></video></div>
+        <div class="cam-card"><div class="cam-label">แยกเซ็นทรัล</div><video id="v8" class="video-player" autoplay muted playsinline controls></video></div>
+        <div class="cam-card"><div class="cam-label">แยกสถานีรถไฟ</div><video id="v9" class="video-player" autoplay muted playsinline controls></video></div>
+        <div class="cam-card"><div class="cam-label">แยก รร หมากแข้ง</div><video id="v10" class="video-player" autoplay muted playsinline controls></video></div>
+        <div class="cam-card"><div class="cam-label">แยกเรือนจำ</div><video id="v11" class="video-player" autoplay muted playsinline controls></video></div>
+        <div class="cam-card"><div class="cam-label">แยก รร อุดรพิทยานุกูล</div><video id="v12" class="video-player" autoplay muted playsinline controls></video></div>
+        <div class="cam-card"><div class="cam-label">แยกอาชีวะศึกษา ด้านถนนเพาะนิยม</div><video id="v13" class="video-player" autoplay muted playsinline controls></video></div>
+        <div class="cam-card"><div class="cam-label">แยกอาชีวศึกษา ด้านถนนประชารักษา</div><video id="v14" class="video-player" autoplay muted playsinline controls></video></div>
+        <div class="cam-card"><div class="cam-label">แยกคอกม้า</div><video id="v15" class="video-player" autoplay muted playsinline controls></video></div>
+        <div class="cam-card"><div class="cam-label">แยกสนามกีฬาเวสุวรรณ</div><video id="v16" class="video-player" autoplay muted playsinline controls></video></div>
+        <div class="cam-card"><div class="cam-label">จุดกลับรถหน้าตลาดเมืองทอง</div><video id="v17" class="video-player" autoplay muted playsinline controls></video></div>
+    </div>
+
+    <script>
+        function initPlayer(id, src) {
+            const video = document.getElementById(id);
+            if (Hls.isSupported()) {
+                const hls = new Hls();
+                hls.loadSource(src);
+                hls.attachMedia(video);
+            }
+        }
+        window.onload = () => {
+            initPlayer('v1', 'https://streaming.udoncity.go.th:1935/live/cctv_121.stream/chunklist_w2010918290.m3u8');
+            initPlayer('v2', 'https://streaming.udoncity.go.th:1935/live/cctv_a740.stream/chunklist_w628809257.m3u8');
+            initPlayer('v3', 'https://streaming.udoncity.go.th:1935/live/cctv_t191146.stream/chunklist_w1181163501.m3u8');
+            initPlayer('v4', 'https://streaming.udoncity.go.th:1935/live/cctv_t191149.stream/chunklist_w1308396059.m3u8');
+            initPlayer('v5', 'https://streaming.udoncity.go.th:1935/live/cctv_t191150.stream/chunklist_w1176991256.m3u8');
+            initPlayer('v6', 'https://streaming.udoncity.go.th:1935/live/cctv_t191151.stream/chunklist_w1926802290.m3u8');
+            initPlayer('v7', 'https://streaming.udoncity.go.th:1935/live/Axis_12_22.stream/chunklist_w236554495.m3u8');
+            initPlayer('v8', 'https://streaming.udoncity.go.th:1935/live/Axis_12_38.stream/chunklist_w1610502304.m3u8');
+            initPlayer('v9', 'https://streaming.udoncity.go.th:1935/live/Axis_12_33.stream/chunklist_w34733218.m3u8');
+            initPlayer('v10', 'https://streaming.udoncity.go.th:1935/live/cctv_t192101.stream/chunklist_w836692422.m3u8');
+            initPlayer('v11', 'https://streaming.udoncity.go.th:1935/live/Axis_IP729.stream/chunklist_w1495648512.m3u8');
+            initPlayer('v12', 'https://streaming.udoncity.go.th:1935/live/Axis_IP727.stream/chunklist_w1204838826.m3u8');
+            initPlayer('v13', 'https://streaming.udoncity.go.th:1935/live/Axis_IP724.stream/chunklist_w741016741.m3u8');
+            initPlayer('v14', 'https://streaming.udoncity.go.th:1935/live/Axis_7.21.stream/chunklist_w1836293394.m3u8');
+            initPlayer('v15', 'https://streaming.udoncity.go.th:1935/live/Axis_12_52.stream/chunklist_w573818671.m3u8');
+            initPlayer('v16', 'https://streaming.udoncity.go.th:1935/live/Bosch_IP2.30.stream/chunklist_w828303139.m3u8');
+            initPlayer('v17', 'https://streaming.udoncity.go.th:1935/live/Axis_12_30.stream/chunklist_w467067745.m3u8');
+        };
+    </script>
+    <script>
+  document.addEventListener("DOMContentLoaded", function() {
+    // ค้นหา Element ของปุ่ม Admin
+    const adminBtn = document.getElementById('admin-nav-item');
+    
+    // ตรวจสอบว่าถ้าไม่ใช่หน้า index.html ให้ลบทิ้งทันที
+    const isIndex = window.location.pathname.endsWith('index.html') || window.location.pathname === '/';
+    
+    if (!isIndex && adminBtn) {
+      adminBtn.style.display = 'none'; // หรือใช้ adminBtn.remove(); เพื่อลบออกจาก Code เลย
+    }
+  });
+</script>
+</body>
+
+</html>

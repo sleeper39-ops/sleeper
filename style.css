@@ -1,0 +1,106 @@
+/* --- 🔑 ปุ่ม Admin Login / Logout (อัปเดตขนาดให้เล็กลง) --- */
+#auth-btn {
+    padding: 6px 14px;      /* ลด Padding เพื่อให้ปุ่มดูเพรียวขึ้น */
+    font-size: 12px;        /* ปรับขนาดตัวอักษรให้เท่ากับ Dashboard มาตรฐาน */
+    font-weight: 600;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: fit-content;     /* กว้างตามเนื้อหา ไม่ขยายเต็ม */
+    height: 34px;           /* กำหนดความสูงให้คงที่ */
+    color: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+#auth-btn i {
+    font-size: 13px;        /* ปรับขนาดไอคอนให้พอดีกับตัวอักษร */
+}
+
+#auth-btn:hover {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* --- 🛠️ ส่วน Admin Actions Bar (แถบเครื่องมือใน Card) --- */
+.admin-actions {
+    display: none; /* เปิดด้วย JS เมื่อเป็น Admin */
+    justify-content: space-around; 
+    align-items: center;
+    padding: 12px 10px;
+    background: #fdfdfd; 
+    border-top: 1px solid #eee;
+    gap: 8px; 
+}
+
+/* --- ปุ่มเครื่องมือ 4 ปุ่ม (Edit, Reset, Lock, Delete) --- */
+.btn-admin-tool {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 700; 
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 6px; 
+    padding: 8px 10px;
+    transition: all 0.2s ease-in-out;
+    flex: 1; 
+    white-space: nowrap; 
+    min-width: fit-content;
+}
+
+.btn-admin-tool span {
+    display: inline-block;
+}
+
+/* --- 🎨 สีและ Effect ของแต่ละปุ่ม --- */
+
+/* ปุ่ม Edit */
+.btn-edit-tool { color: #3498db; border-color: #3498db; }
+.btn-edit-tool:hover { background: #3498db; color: white !important; }
+
+/* ปุ่ม Reset */
+.btn-reset-tool { color: #f39c12; border: 1px solid #f39c12 !important; }
+.btn-reset-tool:hover { background: #f39c12; color: white !important; }
+
+/* ปุ่ม Lock */
+.btn-lock-tool { color: #7f8c8d; border-color: #7f8c8d; }
+.btn-lock-tool.active { color: #e74c3c; border-color: #e74c3c; background: #fff5f5; }
+.btn-lock-tool:hover { background: #7f8c8d; color: white !important; }
+.btn-lock-tool.active:hover { background: #e74c3c; color: white !important; }
+
+/* ปุ่ม Delete */
+.btn-delete-tool { color: #e74c3c; border-color: #e74c3c; }
+.btn-delete-tool:hover { background: #e74c3c; color: white !important; }
+
+/* --- 📱 Responsive (การแสดงผลบนมือถือ) --- */
+@media (max-width: 576px) {
+    .admin-actions {
+        padding: 8px 5px;
+        gap: 4px;
+    }
+    .btn-admin-tool {
+        padding: 6px 4px;
+        font-size: 10px;
+        gap: 3px;
+    }
+    #auth-btn {
+        font-size: 11px;
+        padding: 5px 10px;
+        height: 30px;
+    }
+    
+    @media (max-width: 420px) {
+        .btn-admin-tool span { display: none; } /* ซ่อนข้อความ เหลือแค่ไอคอน */
+        .btn-admin-tool { font-size: 14px; padding: 8px; }
+    }
+}
