@@ -90,10 +90,13 @@
             display: flex; flex-direction: column;
             align-items: center; justify-content: center;
             height: 100%; overflow-y: auto;
+            padding: 40px 20px;
+            box-sizing: border-box;
         }
 
         .home-hero {
             text-align: center;
+            margin-bottom: 40px;
         }
         .home-hero .logo-big {
             font-family: 'Rajdhani', sans-serif; font-size: 4rem; font-weight: 700;
@@ -102,15 +105,110 @@
         }
         .home-hero .logo-big span { color: var(--accent); }
         .home-hero .tagline {
-            font-size: 14px; color: #888; margin-top: 10px; letter-spacing: 1px;
+            font-size: 15px; color: #666; margin-top: 12px; letter-spacing: 1px;
+            font-weight: 500;
+        }
+
+        /* ── MENU GRID SYSTEM ── */
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 260px);
+            gap: 28px;
+            justify-content: center;
+            width: 100%;
+            max-width: 1200px;
+            margin-top: 15px;
+        }
+        .menu-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px 24px;
+            text-align: center;
+            cursor: pointer;
+            box-shadow: 0 6px 24px rgba(0,0,0,0.05);
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            border: 1px solid rgba(0,0,0,0.03);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .menu-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 16px 36px rgba(52, 152, 219, 0.18);
+            border-color: rgba(52, 152, 219, 0.3);
+        }
+        .card-icon {
+            width: 76px;
+            height: 76px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+        .menu-card:hover .card-icon {
+            transform: scale(1.1) rotate(5deg);
+        }
+        
+        /* Icon backgrounds with brand accent colors */
+        .icon-resume { background: rgba(52, 152, 219, 0.1); color: #3498db; }
+        .icon-edoc { background: rgba(155, 89, 182, 0.1); color: #9b59b6; }
+        .icon-live { background: rgba(231, 76, 60, 0.1); color: #e74c3c; }
+        .icon-cal { background: rgba(46, 204, 113, 0.1); color: #2ecc71; }
+
+        .menu-card h3 {
+            font-size: 22px;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        .menu-card p {
+            font-size: 14.5px;
+            color: #7f8c8d;
+            line-height: 1.4;
         }
 
         /* ── Mobile ── */
+        @media (max-width: 992px) {
+            .menu-grid {
+                grid-template-columns: repeat(2, 260px);
+            }
+        }
         @media (max-width: 600px) {
             .home-hero .logo-big { font-size: 2.4rem; gap: 10px; }
             .home-hero .logo-big i { font-size: 2rem !important; }
             .nav-item, .nav-link { padding: 0 12px; font-size: 12px; }
             .topbar-logo { font-size: 1.1rem; padding-right: 12px; }
+            .menu-grid {
+                grid-template-columns: 1fr;
+                padding: 0 10px;
+                gap: 16px;
+            }
+            .menu-card {
+                padding: 20px;
+                flex-direction: row;
+                text-align: left;
+                align-items: center;
+                justify-content: flex-start;
+                gap: 16px;
+            }
+            .card-icon {
+                margin-bottom: 0;
+                width: 48px;
+                height: 48px;
+                font-size: 18px;
+                flex-shrink: 0;
+            }
+            .menu-card h3 {
+                margin-bottom: 2px;
+                font-size: 16px;
+            }
+            .menu-card p {
+                font-size: 12px;
+            }
         }
     </style>
 </head>
@@ -118,17 +216,12 @@
 
 <!-- TOP NAV BAR -->
 <nav class="topbar">
-    <div class="topbar-logo">
+    <div class="topbar-logo" style="cursor: pointer;" onclick="window.showPage('dash-page', document.getElementById('nav-dash'))">
         <i class="fas fa-dog" style="color:var(--accent);font-size:1.1rem;"></i>
         COUGAR<span>2</span>
     </div>
     <div class="topbar-nav">
         <div class="nav-item active" id="nav-dash"     onclick="window.showPage('dash-page', this)"><i class="fas fa-home"></i> หน้าหลัก</div>
-        <div class="nav-item"        id="nav-resume"   onclick="window.showPage('resume-page', this)"><i class="fas fa-id-card"></i> Resume</div>
-        <div class="nav-item"        id="nav-edoc"     onclick="window.showPage('edoc-page', this)"><i class="fas fa-file-alt"></i> E-doc</div>
-        <div class="nav-item"        id="nav-live"     onclick="window.showPage('live-page', this)"><i class="fas fa-video"></i> กล้องสด</div>
-        <div class="nav-item"        id="nav-cal"      onclick="window.showPage('calendar-page', this)"><i class="fas fa-calendar-alt"></i> ปฏิทิน</div>
-        <a   class="nav-link"        href="obsdock.html"><i class="fas fa-boxes-stacked"></i> Obs Docks UI</a>
     </div>
 </nav>
 
@@ -139,10 +232,33 @@
     <div id="dash-page" class="page-content active">
         <div class="home-hero">
             <div class="logo-big"><i class="fas fa-dog" style="color:#3498db;font-size:3.2rem;"></i> COUGAR<span>2</span></div>
-            <div class="tagline">Select a menu item above to get started</div>
+            <div class="tagline">ยินดีต้อนรับสู่ระบบควบคุมและจัดการส่วนตัว เลือกกล่องเมนูด้านล่างเพื่อเริ่มต้น</div>
+        </div>
+        
+        <div class="menu-grid">
+            <div class="menu-card" onclick="window.showPage('resume-page')">
+                <div class="card-icon icon-resume"><i class="fas fa-id-card"></i></div>
+                <h3>Personnel System</h3>
+                <p>ระบบจัดการข้อมูลบุคลากร</p>
+            </div>
+            <div class="menu-card" onclick="window.showPage('edoc-page')">
+                <div class="card-icon icon-edoc"><i class="fas fa-file-alt"></i></div>
+                <h3>E-doc</h3>
+                <p>ระบบจัดการเอกสาร</p>
+            </div>
+            <div class="menu-card" onclick="window.showPage('live-page')">
+                <div class="card-icon icon-live"><i class="fas fa-video"></i></div>
+                <h3>กล้องสด</h3>
+                <p>กล้องวงจรปิดแบบสด</p>
+            </div>
+            <div class="menu-card" onclick="window.showPage('calendar-page')">
+                <div class="card-icon icon-cal"><i class="fas fa-calendar-alt"></i></div>
+                <h3>ปฏิทิน</h3>
+                <p>ตารางและกิจกรรม</p>
+            </div>
         </div>
     </div>
-    <div id="resume-page"   class="page-content"><iframe src="resume.html"></iframe></div>
+    <div id="resume-page"   class="page-content"><iframe src="personal.html"></iframe></div>
     <div id="edoc-page"     class="page-content"><iframe src="e-doc.html"></iframe></div>
     <div id="live-page"     class="page-content"><iframe src="cctv.html"></iframe></div>
     <div id="calendar-page" class="page-content"><iframe src="calendar.html"></iframe></div>

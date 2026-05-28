@@ -2,94 +2,454 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCTV Live Cameras</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { margin: 0; background: #f0f2f5; font-family: sans-serif; }
+        :root {
+            --primary: #3498db;
+            --danger: #e74c3c;
+            --success: #2ecc71;
+            --bg-body: #f0f2f5;
+            --font-family: 'Sarabun', sans-serif;
+        }
+        body { 
+            margin: 0; 
+            background: var(--bg-body); 
+            font-family: var(--font-family);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .header-bar {
+            background: white;
+            padding: 15px 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+            z-index: 10;
+        }
+        .header-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+        .add-cam-form {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .form-input {
+            padding: 8px 12px;
+            border: 1px solid #dcdde1;
+            border-radius: 8px;
+            font-family: var(--font-family);
+            font-size: 13px;
+            outline: none;
+            transition: border 0.2s;
+            width: 180px;
+        }
+        .form-input:focus {
+            border-color: var(--primary);
+        }
+        .form-input.url-input {
+            width: 280px;
+        }
+        .btn-add {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-family: var(--font-family);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: background 0.2s, transform 0.1s;
+        }
+        .btn-add:hover {
+            background: #2980b9;
+        }
+        .btn-add:active {
+            transform: scale(0.98);
+        }
+        .content-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
         .video-grid { 
             display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); 
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); 
             gap: 20px; 
-            padding: 10px;
+            max-width: 1600px;
+            margin: 0 auto;
         }
         .cam-card { 
-            background: #000; 
-            border-radius: 15px; 
+            background: #1e272e; 
+            border-radius: 12px; 
             aspect-ratio: 16/9; 
             position: relative; 
             overflow: hidden; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .cam-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
         }
         .video-player { width: 100%; height: 100%; object-fit: cover; }
         .cam-label { 
-            position: absolute; top: 10px; left: 10px; 
-            background: rgba(231, 76, 60, 0.9); color: white; 
-            padding: 4px 12px; border-radius: 20px; font-size: 11px; z-index: 5; 
+            position: absolute; top: 12px; left: 12px; 
+            background: rgba(44, 62, 80, 0.85); 
+            backdrop-filter: blur(4px);
+            color: white; 
+            padding: 6px 14px; border-radius: 20px; font-size: 12px; z-index: 5; 
+            font-weight: 500;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .edit-btn, .delete-btn {
+            position: absolute; top: 12px;
+            backdrop-filter: blur(4px);
+            color: white;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 5;
+            transition: background 0.2s, transform 0.2s, opacity 0.2s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            opacity: 0;
+        }
+        .edit-btn {
+            right: 48px;
+            background: rgba(52, 152, 219, 0.85);
+        }
+        .edit-btn:hover {
+            background: #2980b9;
+            transform: scale(1.1);
+        }
+        .delete-btn {
+            right: 12px;
+            background: rgba(231, 76, 60, 0.85);
+        }
+        .delete-btn:hover {
+            background: #c0392b;
+            transform: scale(1.1);
+        }
+        .cam-card:hover .edit-btn, .cam-card:hover .delete-btn {
+            opacity: 1;
+        }
+        
+        /* Modal CSS */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(5px);
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .modal.active {
+            display: flex;
+            opacity: 1;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 450px;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .modal.active .modal-content {
+            transform: scale(1);
+        }
+        .modal-header {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #95a5a6;
+            line-height: 1;
+        }
+        .modal-close:hover {
+            color: #2c3e50;
+        }
+        .modal-body {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .modal-input {
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 8px;
+        }
+        .btn-cancel {
+            background: #bdc3c7;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: var(--font-family);
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .btn-cancel:hover { background: #95a5a6; }
+        .btn-save {
+            background: var(--success);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: var(--font-family);
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .btn-save:hover { background: #27ae60; }
+        
+        @media (max-width: 768px) {
+            body {
+                overflow-y: auto;
+                height: auto;
+            }
+            .header-bar {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 15px;
+            }
+            .add-cam-form {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .form-input, .form-input.url-input {
+                width: 100%;
+            }
+            .edit-btn, .delete-btn {
+                opacity: 1;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="video-grid">
-        <div class="cam-card"><div class="cam-label">แยกกรมหลวง</div><video id="v1" class="video-player" autoplay muted playsinline controls></video></div>
-        <div class="cam-card"><div class="cam-label">แยกซอยจินตคาม</div><video id="v2" class="video-player" autoplay muted playsinline controls></video></div>
-        <div class="cam-card"><div class="cam-label">แยกปั้ม ปตท. ไฮเทค</div><video id="v3" class="video-player" autoplay muted playsinline controls></video></div>
-        <div class="cam-card"><div class="cam-label">แยกกองบิน (2)</div><video id="v4" class="video-player" autoplay muted playsinline controls></video></div>
-        <div class="cam-card"><div class="cam-label">แยกกองบิน (1)</div><video id="v5" class="video-player" autoplay muted playsinline controls></video></div>
-        <div class="cam-card"><div class="cam-label">มทบ.24 (1)</div><video id="v6" class="video-player" autoplay muted playsinline controls></video></div>
-        <div class="cam-card"><div class="cam-label">แยกร่วมทวี</div><video id="v7" class="video-player" autoplay muted playsinline controls></video></div>
-        <div class="cam-card"><div class="cam-label">แยกเซ็นทรัล</div><video id="v8" class="video-player" autoplay muted playsinline controls></video></div>
-        <div class="cam-card"><div class="cam-label">แยกสถานีรถไฟ</div><video id="v9" class="video-player" autoplay muted playsinline controls></video></div>
-        <div class="cam-card"><div class="cam-label">แยก รร หมากแข้ง</div><video id="v10" class="video-player" autoplay muted playsinline controls></video></div>
-        <div class="cam-card"><div class="cam-label">แยกเรือนจำ</div><video id="v11" class="video-player" autoplay muted playsinline controls></video></div>
-        <div class="cam-card"><div class="cam-label">แยก รร อุดรพิทยานุกูล</div><video id="v12" class="video-player" autoplay muted playsinline controls></video></div>
-        <div class="cam-card"><div class="cam-label">แยกอาชีวะศึกษา ด้านถนนเพาะนิยม</div><video id="v13" class="video-player" autoplay muted playsinline controls></video></div>
-        <div class="cam-card"><div class="cam-label">แยกอาชีวศึกษา ด้านถนนประชารักษา</div><video id="v14" class="video-player" autoplay muted playsinline controls></video></div>
-        <div class="cam-card"><div class="cam-label">แยกคอกม้า</div><video id="v15" class="video-player" autoplay muted playsinline controls></video></div>
-        <div class="cam-card"><div class="cam-label">แยกสนามกีฬาเวสุวรรณ</div><video id="v16" class="video-player" autoplay muted playsinline controls></video></div>
-        <div class="cam-card"><div class="cam-label">จุดกลับรถหน้าตลาดเมืองทอง</div><video id="v17" class="video-player" autoplay muted playsinline controls></video></div>
+
+    <div class="header-bar">
+        <div class="header-title">
+            <i class="fas fa-video" style="color: var(--primary);"></i> ระบบกล้องวงจรปิดสด
+        </div>
+        <form class="add-cam-form" onsubmit="addCam(event)">
+            <input type="text" id="newCamName" class="form-input" placeholder="ชื่อกล้อง (เช่น แยกวิทยุ)" required>
+            <input type="url" id="newCamUrl" class="form-input url-input" placeholder="ลิงก์สตรีม .m3u8" required>
+            <button type="submit" class="btn-add">
+                <i class="fas fa-plus"></i> เพิ่มกล้อง
+            </button>
+        </form>
+    </div>
+
+    <div class="content-scroll">
+        <div class="video-grid">
+            <!-- Dynamic cameras render here -->
+        </div>
+    </div>
+
+    <!-- Modal แก้ไขข้อมูลกล้อง -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span><i class="fas fa-edit" style="color: var(--primary);"></i> แก้ไขข้อมูลกล้อง</span>
+                <button class="modal-close" onclick="closeEditModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editCamIndex">
+                <div style="font-size: 13px; color: #7f8c8d; margin-bottom: 2px;">ชื่อกล้อง:</div>
+                <input type="text" id="editCamName" class="form-input modal-input" placeholder="ชื่อกล้อง" required>
+                <div style="font-size: 13px; color: #7f8c8d; margin-bottom: 2px; margin-top: 8px;">ลิงก์สตรีม .m3u8:</div>
+                <input type="url" id="editCamUrl" class="form-input modal-input" placeholder="ลิงก์สตรีม .m3u8" required>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="closeEditModal()">ยกเลิก</button>
+                <button class="btn-save" onclick="saveEditCam()">บันทึกการแก้ไข</button>
+            </div>
+        </div>
     </div>
 
     <script>
+        const defaultCams = [
+            { name: "แยกกรมหลวง", url: "https://streaming.udoncity.go.th:1935/live/cctv_121.stream/chunklist_w2010918290.m3u8" },
+            { name: "แยกซอยจินตคาม", url: "https://streaming.udoncity.go.th:1935/live/cctv_a740.stream/chunklist_w628809257.m3u8" },
+            { name: "แยกปั้ม ปตท. ไฮเทค", url: "https://streaming.udoncity.go.th:1935/live/cctv_t191146.stream/chunklist_w1181163501.m3u8" },
+            { name: "แยกกองบิน (2)", url: "https://streaming.udoncity.go.th:1935/live/cctv_t191149.stream/chunklist_w1308396059.m3u8" },
+            { name: "แยกกองบิน (1)", url: "https://streaming.udoncity.go.th:1935/live/cctv_t191150.stream/chunklist_w1176991256.m3u8" },
+            { name: "มทบ.24 (1)", url: "https://streaming.udoncity.go.th:1935/live/cctv_t191151.stream/chunklist_w1926802290.m3u8" },
+            { name: "แยกร่วมทวี", url: "https://streaming.udoncity.go.th:1935/live/Axis_12_22.stream/chunklist_w236554495.m3u8" },
+            { name: "แยกเซ็นทรัล", url: "https://streaming.udoncity.go.th:1935/live/Axis_12_38.stream/chunklist_w1610502304.m3u8" },
+            { name: "แยกสถานีรถไฟ", url: "https://streaming.udoncity.go.th:1935/live/Axis_12_33.stream/chunklist_w34733218.m3u8" },
+            { name: "แยก รร หมากแข้ง", url: "https://streaming.udoncity.go.th:1935/live/cctv_t192101.stream/chunklist_w836692422.m3u8" },
+            { name: "แยกเรือนจำ", url: "https://streaming.udoncity.go.th:1935/live/Axis_IP729.stream/chunklist_w1495648512.m3u8" },
+            { name: "แยก รร อุดรพิทยานุกูล", url: "https://streaming.udoncity.go.th:1935/live/Axis_IP727.stream/chunklist_w1204838826.m3u8" },
+            { name: "แยกอาชีวะศึกษา ด้านถนนเพาะนิยม", url: "https://streaming.udoncity.go.th:1935/live/Axis_IP724.stream/chunklist_w741016741.m3u8" },
+            { name: "แยกอาชีวศึกษา ด้านถนนประชารักษา", url: "https://streaming.udoncity.go.th:1935/live/Axis_7.21.stream/chunklist_w1836293394.m3u8" },
+            { name: "แยกคอกม้า", url: "https://streaming.udoncity.go.th:1935/live/Axis_12_52.stream/chunklist_w573818671.m3u8" },
+            { name: "แยกสนามกีฬาเวสุวรรณ", url: "https://streaming.udoncity.go.th:1935/live/Bosch_IP2.30.stream/chunklist_w828303139.m3u8" },
+            { name: "จุดกลับรถหน้าตลาดเมืองทอง", url: "https://streaming.udoncity.go.th:1935/live/Axis_12_30.stream/chunklist_w467067745.m3u8" }
+        ];
+
+        let cams = [];
+
+        function loadCams() {
+            const stored = localStorage.getItem('cams_list');
+            if (stored) {
+                try {
+                    cams = JSON.parse(stored);
+                } catch (e) {
+                    cams = [...defaultCams];
+                }
+            } else {
+                cams = [...defaultCams];
+                saveCams();
+            }
+        }
+
+        function saveCams() {
+            localStorage.setItem('cams_list', JSON.stringify(cams));
+        }
+
         function initPlayer(id, src) {
             const video = document.getElementById(id);
             if (Hls.isSupported()) {
                 const hls = new Hls();
                 hls.loadSource(src);
                 hls.attachMedia(video);
+            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                video.src = src;
             }
         }
+
+        function renderCams() {
+            const grid = document.querySelector('.video-grid');
+            grid.innerHTML = '';
+            
+            cams.forEach((cam, index) => {
+                const card = document.createElement('div');
+                card.className = 'cam-card';
+                card.innerHTML = `
+                    <div class="cam-label">${cam.name}</div>
+                    <button class="edit-btn" onclick="openEditModal(${index})" title="แก้ไขกล้อง"><i class="fas fa-edit"></i></button>
+                    <button class="delete-btn" onclick="removeCam(${index})" title="ลบกล้อง"><i class="fas fa-trash"></i></button>
+                    <video id="v_${index}" class="video-player" autoplay muted playsinline controls></video>
+                `;
+                grid.appendChild(card);
+                initPlayer(`v_${index}`, cam.url);
+            });
+        }
+
+        function removeCam(index) {
+            if (confirm(`คุณต้องการลบกล้อง "${cams[index].name}" ใช่หรือไม่?`)) {
+                cams.splice(index, 1);
+                saveCams();
+                renderCams();
+            }
+        }
+
+        function addCam(event) {
+            event.preventDefault();
+            const nameInput = document.getElementById('newCamName');
+            const urlInput = document.getElementById('newCamUrl');
+            
+            const name = nameInput.value.trim();
+            const url = urlInput.value.trim();
+            
+            if (!name || !url) {
+                alert('กรุณากรอกข้อมูลให้ครบถ้วน');
+                return;
+            }
+            
+            cams.push({ name, url });
+            saveCams();
+            renderCams();
+            
+            nameInput.value = '';
+            urlInput.value = '';
+        }
+
+        // Functions สำหรับ Edit Modal
+        function openEditModal(index) {
+            const cam = cams[index];
+            document.getElementById('editCamIndex').value = index;
+            document.getElementById('editCamName').value = cam.name;
+            document.getElementById('editCamUrl').value = cam.url;
+            
+            const modal = document.getElementById('editModal');
+            modal.classList.add('active');
+        }
+
+        function closeEditModal() {
+            const modal = document.getElementById('editModal');
+            modal.classList.remove('active');
+        }
+
+        function saveEditCam() {
+            const index = parseInt(document.getElementById('editCamIndex').value);
+            const name = document.getElementById('editCamName').value.trim();
+            const url = document.getElementById('editCamUrl').value.trim();
+            
+            if (!name || !url) {
+                alert('กรุณากรอกข้อมูลให้ครบถ้วน');
+                return;
+            }
+            
+            cams[index] = { name, url };
+            saveCams();
+            renderCams();
+            closeEditModal();
+        }
+
         window.onload = () => {
-            initPlayer('v1', 'https://streaming.udoncity.go.th:1935/live/cctv_121.stream/chunklist_w2010918290.m3u8');
-            initPlayer('v2', 'https://streaming.udoncity.go.th:1935/live/cctv_a740.stream/chunklist_w628809257.m3u8');
-            initPlayer('v3', 'https://streaming.udoncity.go.th:1935/live/cctv_t191146.stream/chunklist_w1181163501.m3u8');
-            initPlayer('v4', 'https://streaming.udoncity.go.th:1935/live/cctv_t191149.stream/chunklist_w1308396059.m3u8');
-            initPlayer('v5', 'https://streaming.udoncity.go.th:1935/live/cctv_t191150.stream/chunklist_w1176991256.m3u8');
-            initPlayer('v6', 'https://streaming.udoncity.go.th:1935/live/cctv_t191151.stream/chunklist_w1926802290.m3u8');
-            initPlayer('v7', 'https://streaming.udoncity.go.th:1935/live/Axis_12_22.stream/chunklist_w236554495.m3u8');
-            initPlayer('v8', 'https://streaming.udoncity.go.th:1935/live/Axis_12_38.stream/chunklist_w1610502304.m3u8');
-            initPlayer('v9', 'https://streaming.udoncity.go.th:1935/live/Axis_12_33.stream/chunklist_w34733218.m3u8');
-            initPlayer('v10', 'https://streaming.udoncity.go.th:1935/live/cctv_t192101.stream/chunklist_w836692422.m3u8');
-            initPlayer('v11', 'https://streaming.udoncity.go.th:1935/live/Axis_IP729.stream/chunklist_w1495648512.m3u8');
-            initPlayer('v12', 'https://streaming.udoncity.go.th:1935/live/Axis_IP727.stream/chunklist_w1204838826.m3u8');
-            initPlayer('v13', 'https://streaming.udoncity.go.th:1935/live/Axis_IP724.stream/chunklist_w741016741.m3u8');
-            initPlayer('v14', 'https://streaming.udoncity.go.th:1935/live/Axis_7.21.stream/chunklist_w1836293394.m3u8');
-            initPlayer('v15', 'https://streaming.udoncity.go.th:1935/live/Axis_12_52.stream/chunklist_w573818671.m3u8');
-            initPlayer('v16', 'https://streaming.udoncity.go.th:1935/live/Bosch_IP2.30.stream/chunklist_w828303139.m3u8');
-            initPlayer('v17', 'https://streaming.udoncity.go.th:1935/live/Axis_12_30.stream/chunklist_w467067745.m3u8');
+            loadCams();
+            renderCams();
         };
     </script>
-    <script>
-  document.addEventListener("DOMContentLoaded", function() {
-    // ค้นหา Element ของปุ่ม Admin
-    const adminBtn = document.getElementById('admin-nav-item');
-    
-    // ตรวจสอบว่าถ้าไม่ใช่หน้า index.html ให้ลบทิ้งทันที
-    const isIndex = window.location.pathname.endsWith('index.html') || window.location.pathname === '/';
-    
-    if (!isIndex && adminBtn) {
-      adminBtn.style.display = 'none'; // หรือใช้ adminBtn.remove(); เพื่อลบออกจาก Code เลย
-    }
-  });
-</script>
 </body>
-
 </html>
