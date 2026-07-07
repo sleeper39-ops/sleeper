@@ -98,6 +98,7 @@ thead th{background:var(--bg-1);padding:11px 14px;text-align:left;font-size:13px
 tbody td{padding:12px 14px;font-size:15px;border-bottom:1px solid var(--bg-2);vertical-align:middle;}
 tbody tr{cursor:pointer;transition:background .12s;}
 tbody tr:hover{background:var(--bg-hover);}
+tbody tr.personnel-row{cursor:pointer;}
 tbody tr:last-child td{border-bottom:none;}
 .rank-tag{display:inline-block;background:rgba(200,134,26,.12);color:var(--accent-gold);border:1.5px solid rgba(200,134,26,.3);border-radius:5px;padding:2px 9px;font-size:15px;font-weight:700;}
 .pill{display:inline-flex;align-items:center;gap:5px;padding:3px 11px;border-radius:20px;font-size:13px;font-weight:600;}
@@ -531,6 +532,10 @@ tbody tr:last-child td{border-bottom:none;}
           </select>
         </div>
         <div><label class="flabel">เบอร์โทรศัพท์</label><input class="finput" id="f_tel" placeholder="0XX-XXX-XXXX" maxlength="12"></div>
+        <div style="grid-column:1/-1">
+          <label class="flabel">การแพ้ยา</label>
+          <input class="finput" id="f_allergy" placeholder="เช่น ไม่มี / แพ้เพนิซิลลิน / แพ้ยาปฏิชีวนะ">
+        </div>
       </div>
       <div class="form-section-title">🎖️ ข้อมูลราชการ</div>
       <div class="fgrid">
@@ -1133,6 +1138,8 @@ function getCatsObj(){
 }
 let nextId=1;
 let nextTrainId=1;
+let nextEduId=1;
+let nextFieldId=1;
 let deleteTargetId=null;
 let deleteTargetType='personnel';
 
@@ -1228,6 +1235,7 @@ async function fbLoadAll() {
 
     renderPersonnel(); renderEdu(); renderTraining(); renderField();
     renderPromotion(); renderSalary(); renderDocs('all'); populateSelects();
+    if(getSelectedPid()) onProfileSelectChange();
     rebuildDocTabs();
     // โหลดรูปจาก Firebase แทน localStorage เพื่อให้ทุกเครื่องเห็นรูปเดียวกัน
     loadAllPhotosFromFirebase().then(()=>{
@@ -1489,6 +1497,7 @@ function exportProfilePDF(pid) {
         <div class="grid-item"><label>เลขบัตรประชาชน</label><span>${p.cid||'—'}</span></div>
         <div class="grid-item"><label>วันเกิด (พ.ศ.)</label><span>${p.dob||'—'}</span></div>
         <div class="grid-item"><label>กรุ๊ปเลือด</label><span>${p.blood||'—'}</span></div>
+        <div class="grid-item"><label>การแพ้ยา</label><span>${p.allergy||'—'}</span></div>
         <div class="grid-item"><label>เบอร์โทรศัพท์</label><span>${p.tel||'—'}</span></div>
       </div>
     </div>
@@ -1838,6 +1847,7 @@ function exportAllPDF(pid){
       <div class="info-card"><div class="lbl">เลขบัตรประชาชน</div><div class="val" style="font-size:9.5pt;">${p.cid||'—'}</div></div>
       <div class="info-card"><div class="lbl">วันเกิด</div><div class="val">${p.dob||'—'}</div></div>
       <div class="info-card"><div class="lbl">กรุ๊ปเลือด</div><div class="val">${p.blood||'—'}</div></div>
+      <div class="info-card"><div class="lbl">การแพ้ยา</div><div class="val">${p.allergy||'—'}</div></div>
       <div class="info-card"><div class="lbl">เบอร์โทร</div><div class="val">${p.tel||'—'}</div></div>
       <div class="info-card"><div class="lbl">เหล่า</div><div class="val">${p.branch||'—'}</div></div>
       <div class="info-card"><div class="lbl">กองร้อย</div><div class="val">${p.company||'—'}</div></div>
@@ -1989,8 +1999,10 @@ function doLogin(){
     CURRENT_ROLE=role;
     sessionStorage.setItem('aps_logged_in','1');
     sessionStorage.setItem('aps_role',role);
+    sessionStorage.setItem('aps_active_sec','personnel');
     showApp();
     initApp();
+    goToPersonnelPage();
   } else {
     err.style.display='block';
     document.getElementById('loginPass').value='';
@@ -2107,6 +2119,19 @@ function onProfileSelectChange(){
   renderDocs(curCat, pid ? parseInt(pid) : null);
 }
 
+function refreshAllDataViews(){
+  renderPersonnel();
+  renderSalary();
+  populateSelects();
+  const pid = getSelectedPid();
+  if(pid && !personnel.some(p => String(p.id) === String(pid))){
+    const sel = document.getElementById('profileSelect');
+    if(sel) sel.value = '';
+    sessionStorage.removeItem('aps_selected_pid');
+  }
+  onProfileSelectChange();
+}
+
 
 function navTo(sec, el){
   document.querySelectorAll('.section-page').forEach(s=>s.classList.remove('active'));
@@ -2121,6 +2146,11 @@ function navTo(sec, el){
   }
   // บันทึกหน้าปัจจุบันไว้สำหรับ refresh
   sessionStorage.setItem('aps_active_sec', sec);
+}
+
+function goToPersonnelPage(){
+  const btn = document.querySelector('.si[data-sec="personnel"]');
+  navTo('personnel', btn);
 }
 
 // ===================== INIT =====================
@@ -2143,10 +2173,16 @@ function initApp(){
   }
 }
 function populateSelects(){
+  const curPid = getSelectedPid();
   const opts=personnel.map(p=>`<option value="${p.id}">${p.rank} ${p.fname} ${p.lname}</option>`).join('');
   document.getElementById('profileSelect').innerHTML='<option value="">-- เลือกกำลังพล --</option>'+opts;
   document.getElementById('pensionSelect').innerHTML='<option value="">-- เลือกกำลังพล --</option>'+opts;
   document.getElementById('t_pid').innerHTML='<option value="">-- เลือกกำลังพล --</option>'+opts;
+  if(curPid){
+    document.getElementById('profileSelect').value = curPid;
+    const penSel = document.getElementById('pensionSelect');
+    if(penSel) penSel.value = curPid;
+  }
   populateAllModalSelects();
 }
 
@@ -2213,10 +2249,10 @@ function renderPersonnel(){
       if(tD>0) totalSvcParts.push(tD+' วัน');
       const totalSvcStr = totalSvcParts.join(' ') || '0 วัน';
       return `
-      <tr onclick="openDetail(${p.id})">
+      <tr class="personnel-row" onclick="openDetail(${p.id})">
         <td style="color:var(--text-3);font-size:15px">${i+1}</td>
         <td><div class="name-cell">
-          <div><div style="font-size:15px;font-weight:700">${p.rank} ${p.fname} ${p.lname}</div>
+          <div><div style="font-size:15px;font-weight:700;color:var(--blue);text-decoration:underline;text-underline-offset:3px;">${p.rank} ${p.fname} ${p.lname}</div>
           <div style="font-size:13px;color:var(--text-3)">${p.unit}</div></div></div></td>
         <td style="color:var(--blue);font-size:15px;font-weight:700">${p.idno}</td>
         <td style="color:var(--text-2);font-size:15px">${p.pos}</td>
@@ -2239,23 +2275,20 @@ function renderPersonnel(){
 
 // ===================== DETAIL MODAL =====================
 function openDetail(id){
-  // set profileSelect แล้วไปหน้าประวัติส่วนตัว
   const sel = document.getElementById('profileSelect');
-  if(sel){
-    sel.value = String(id);
-    onProfileSelectChange();
-  }
-  // ไปหน้าประวัติส่วนตัว
+  if(sel) sel.value = String(id);
   const btn = document.querySelector('.si[data-sec="profile"]');
   navTo('profile', btn);
+  onProfileSelectChange();
 }
+window.openDetail = openDetail;
 
 // ===================== ADD/EDIT PERSONNEL =====================
 function openAddModal(){
   if(!isAdmin()){ alert("ไม่มีสิทธิ์เพิ่มข้อมูล"); return; }
   document.getElementById('addModalTitle').textContent='＋ เพิ่มกำลังพล';
   document.getElementById('f_editId').value='';
-  ['fname','lname','idno','cid','tel','dob','start','psr1','psr2','psr3','psr4'].forEach(k=>{
+  ['fname','lname','idno','cid','tel','dob','start','psr1','psr2','psr3','psr4','allergy'].forEach(k=>{
     const el=document.getElementById('f_'+k);if(el) el.value='';
   });
   ['rank','pos','company','branch','blood','grade'].forEach(k=>{
@@ -2274,7 +2307,7 @@ function openEditModal(id){
   const p=personnel.find(x=>String(x.id)===String(id));if(!p) return;
   document.getElementById('addModalTitle').textContent='✏️ แก้ไขข้อมูลกำลังพล';
   document.getElementById('f_editId').value=id;
-  ['rank','fname','lname','dob','cid','blood','tel','idno','pos','unit','company','branch','start','status','grade','prd'].forEach(k=>{
+  ['rank','fname','lname','dob','cid','blood','allergy','tel','idno','pos','unit','company','branch','start','status','grade','prd'].forEach(k=>{
     const el=document.getElementById('f_'+k);if(el) el.value=p[k]||'';
   });
   document.getElementById('f_status').value=p.status||'s1';
@@ -2311,6 +2344,7 @@ function savePersonnel(){
   const obj={
     rank:document.getElementById('f_rank').value,fname,lname,idno,
     cid:document.getElementById('f_cid').value.trim(),blood:document.getElementById('f_blood').value,
+    allergy:document.getElementById('f_allergy').value.trim(),
     tel:document.getElementById('f_tel').value.trim(),pos:document.getElementById('f_pos').value,
     unit:document.getElementById('f_unit').value||'รพศ.2 พัน.1',
     company:document.getElementById('f_company').value,branch:document.getElementById('f_branch').value,
@@ -2326,7 +2360,7 @@ function savePersonnel(){
     personnel.push(obj);
   }
   closeModal('addModal');
-  renderPersonnel();renderSalary();populateSelects();
+  refreshAllDataViews();
   autoSave('personnel');
 }
 
@@ -2339,14 +2373,20 @@ function askDelete(id,label,type='personnel'){
 }
 function confirmDelete(){
   if(deleteTargetType==='personnel'){
+    const deletedId = deleteTargetId;
     personnel=personnel.filter(p=>p.id!==deleteTargetId);
+    if(String(getSelectedPid())===String(deletedId)){
+      const sel = document.getElementById('profileSelect');
+      if(sel) sel.value = '';
+      sessionStorage.removeItem('aps_selected_pid');
+    }
     closeModal('confirmModal');
-    renderPersonnel();renderSalary();populateSelects();
+    refreshAllDataViews();
     autoSave('personnel');
   } else if(deleteTargetType==='training'){
     trainingData=trainingData.filter(t=>t.id!==deleteTargetId);
     closeModal('confirmModal');
-    renderTraining();
+    refreshAllDataViews();
     autoSave('training');
   }
   deleteTargetId=null;
@@ -2372,7 +2412,7 @@ function renderEdu(){
       <td><span class="pill ${sc[e.status]||'pill-blue'}"><span class="pill-dot"></span>${sl[e.status]||e.status}</span></td>
       <td><div style="display:flex;gap:5px">
         ${isAdmin()?`<button class="btn btn-outline btn-sm btn-icon" onclick="openEditEduModal(${e.id})">✏️</button>
-        <button class="btn btn-red btn-sm btn-icon" onclick="if(confirm('ลบ?')){eduData=eduData.filter(x=>String(x.id)!==String(${e.id}));renderEdu();autoSave('education');}">🗑️</button>`:''}
+        <button class="btn btn-red btn-sm btn-icon" onclick="deleteEduRecord(${e.id})">🗑️</button>`:''}
       </div></td>
     </tr>`;
   }).join('');
@@ -2412,7 +2452,7 @@ function saveTraining(){
     trainingData.push(obj);
   }
   closeModal('trainingModal');
-  renderTraining();
+  refreshAllDataViews();
   autoSave('training');
 }
 
@@ -2484,7 +2524,7 @@ function renderField(){
       <td><span class="pill ${f.status==='active'?'pill-red':'pill-teal'}"><span class="pill-dot"></span>${f.status==='active'?'ปฏิบัติการ':'สิ้นสุดแล้ว'}</span></td>
       <td><div style="display:flex;gap:5px">
         ${isAdmin()?`<button class="btn btn-outline btn-sm btn-icon" onclick="openEditFieldModal(${f.id})">✏️</button>
-        <button class="btn btn-red btn-sm btn-icon" onclick="if(confirm('ลบ?')){fieldData=fieldData.filter(x=>String(x.id)!==String(${f.id}));renderField();autoSave('field');}">🗑️</button>`:''}
+        <button class="btn btn-red btn-sm btn-icon" onclick="deleteFieldRecord(${f.id})">🗑️</button>`:''}
       </div></td>
     </tr>`;
   }).join('');
@@ -2513,7 +2553,7 @@ function renderPromotion(){
       <td><span class="pill ${sc[pr.status]||'pill-blue'}"><span class="pill-dot"></span>${sl[pr.status]||pr.status}</span></td>
       <td><div style="display:flex;gap:5px">
         ${isAdmin()?`<button class="btn btn-outline btn-sm btn-icon" onclick="openEditPromotionModal(${pr.id})">✏️</button>
-        <button class="btn btn-red btn-sm btn-icon" onclick="if(confirm('ลบ?')){promotionData=promotionData.filter(x=>String(x.id)!==String(${pr.id}));renderPromotion();autoSave('promotion');}">🗑️</button>`:''}
+        <button class="btn btn-red btn-sm btn-icon" onclick="deletePromotionRecord(${pr.id})">🗑️</button>`:''}
       </div></td>
     </tr>`;
   }).join('');
@@ -2540,8 +2580,8 @@ function renderSalary(){
 
 // ===================== PROFILE =====================
 function renderProfile(){
-  const id=parseInt(document.getElementById('profileSelect').value);
-  const p=personnel.find(x=>String(x.id)===String(id));
+  const pid = getSelectedPid();
+  const p = pid ? personnel.find(x=>String(x.id)===String(pid)) : null;
   if(!p){document.getElementById('profileContent').innerHTML='<div style="padding:48px;text-align:center;color:var(--text-3);font-size:15px;">เลือกกำลังพลเพื่อดูประวัติ</div>';return;}
   document.getElementById('profileContent').innerHTML=`
     <div class="tcard" style="padding:0;overflow:hidden;">
@@ -2576,6 +2616,7 @@ function renderProfile(){
         <div><div class="di-label">เลขบัตรประชาชน</div><div class="di-val">${p.cid||'—'}</div></div>
         <div><div class="di-label">วันเกิด (พ.ศ.)</div><div class="di-val">${p.dob||'—'}</div></div>
         <div><div class="di-label">กรุ๊ปเลือด</div><div class="di-val">${p.blood||'—'}</div></div>
+        <div><div class="di-label">การแพ้ยา</div><div class="di-val">${p.allergy||'—'}</div></div>
         <div><div class="di-label">เบอร์โทรศัพท์</div><div class="di-val">${p.tel||'—'}</div></div>
       </div>
     </div>
@@ -2946,7 +2987,6 @@ function renderDocs(cat, pidFilter){
 }
 
 // ===================== EDUCATION MODAL =====================
-let nextEduId = 1;
 // Duration helpers — weeks only
 function buildDuration(){
   const w=parseInt(document.getElementById('e_dur_w').value)||0;
@@ -3002,7 +3042,16 @@ function saveEdu(){
     nextEduId = obj.id+1;
     eduData.push(obj);
   }
-  closeModal('eduModal'); renderEdu(); autoSave('education');
+  closeModal('eduModal');
+  refreshAllDataViews();
+  autoSave('education');
+}
+
+function deleteEduRecord(id){
+  if(!confirm('ลบหลักสูตรนี้?')) return;
+  eduData = eduData.filter(x => String(x.id) !== String(id));
+  refreshAllDataViews();
+  autoSave('education');
 }
 
 // Sync docs to Google Drive — opens Drive folder or prompts for URL
@@ -3049,7 +3098,6 @@ function changeDriveUrl(){
 }
 
 // ===================== FIELD MODAL =====================
-let nextFieldId = 1;
 function openAddFieldModal(){
   document.getElementById('fieldModalTitle').textContent='＋ เพิ่มราชการสนาม';
   document.getElementById('fd_editId').value='';
@@ -3095,7 +3143,16 @@ function saveField(){
   const editId=document.getElementById('fd_editId').value;
   if(editId){ const i=fieldData.findIndex(x=>x.id==editId); if(i>-1){ obj.id=parseInt(editId); fieldData[i]=obj; } }
   else { obj.id=fieldData.length>0?Math.max(...fieldData.map(x=>Number(x.id)||0))+1:1; fieldData.push(obj); }
-  closeModal('fieldModal'); renderField(); autoSave('field');
+  closeModal('fieldModal');
+  refreshAllDataViews();
+  autoSave('field');
+}
+
+function deleteFieldRecord(id){
+  if(!confirm('ลบรายการราชการสนามนี้?')) return;
+  fieldData = fieldData.filter(x => String(x.id) !== String(id));
+  refreshAllDataViews();
+  autoSave('field');
 }
 
 // ===================== PROMOTION MODAL =====================
@@ -3133,7 +3190,16 @@ function savePromotion(){
   const editId=document.getElementById('pr_editId').value;
   if(editId){ const i=promotionData.findIndex(x=>x.id==editId); if(i>-1){ obj.id=parseInt(editId); promotionData[i]=obj; } }
   else { obj.id=promotionData.length>0?Math.max(...promotionData.map(x=>Number(x.id)||0))+1:1; promotionData.push(obj); }
-  closeModal('promotionModal'); renderPromotion(); autoSave('promotion');
+  closeModal('promotionModal');
+  refreshAllDataViews();
+  autoSave('promotion');
+}
+
+function deletePromotionRecord(id){
+  if(!confirm('ลบแผนเลื่อนยศ/สอบนี้?')) return;
+  promotionData = promotionData.filter(x => String(x.id) !== String(id));
+  refreshAllDataViews();
+  autoSave('promotion');
 }
 
 // ===================== POPULATE SELECTS FOR NEW MODALS =====================
