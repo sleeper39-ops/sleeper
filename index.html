@@ -158,6 +158,7 @@
         .icon-edoc { background: rgba(155, 89, 182, 0.1); color: #9b59b6; }
         .icon-live { background: rgba(231, 76, 60, 0.1); color: #e74c3c; }
         .icon-cal { background: rgba(46, 204, 113, 0.1); color: #2ecc71; }
+        .icon-qr { background: rgba(241, 196, 15, 0.12); color: #f1c40f; }
 
         .menu-card h3 {
             font-size: 22px;
@@ -256,13 +257,19 @@
                 <h3>ปฏิทิน</h3>
                 <p>ตารางและกิจกรรม</p>
             </div>
+            <div class="menu-card" onclick="window.showPage('qrcode-page')">
+                <div class="card-icon icon-qr"><i class="fas fa-qrcode"></i></div>
+                <h3>QR Code</h3>
+                <p>แปลงลิงก์เป็น QR Code</p>
+            </div>
         </div>
     </div>
     <div id="resume-page"   class="page-content"><iframe src="personal.html"></iframe></div>
     <div id="edoc-page"     class="page-content"><iframe src="e-doc.html"></iframe></div>
     <div id="live-page"     class="page-content"><iframe src="cctv.html"></iframe></div>
     <div id="calendar-page" class="page-content"><iframe src="calendar.html"></iframe></div>
-   
+    <div id="qrcode-page"   class="page-content"><iframe src="qrcode.html"></iframe></div>
+
 </div>
 
 <script>
