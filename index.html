@@ -159,6 +159,8 @@
         .icon-live { background: rgba(231, 76, 60, 0.1); color: #e74c3c; }
         .icon-cal { background: rgba(46, 204, 113, 0.1); color: #2ecc71; }
         .icon-qr { background: rgba(241, 196, 15, 0.12); color: #f1c40f; }
+        .icon-automove { background: rgba(243, 156, 18, 0.12); color: #f39c12; }
+        .icon-downloader { background: rgba(26, 188, 156, 0.12); color: #1abc9c; }
 
         .menu-card h3 {
             font-size: 22px;
@@ -262,6 +264,16 @@
                 <h3>QR Code</h3>
                 <p>แปลงลิงก์เป็น QR Code</p>
             </div>
+            <div class="menu-card" onclick="window.showPage('automove-page')">
+                <div class="card-icon icon-automove"><i class="fas fa-server"></i></div>
+                <h3>Auto Move Server</h3>
+                <p>ระบบย้ายไฟล์อัตโนมัติ</p>
+            </div>
+            <div class="menu-card" onclick="window.showPage('downloader-page')">
+                <div class="card-icon icon-downloader"><i class="fas fa-download"></i></div>
+                <h3>Downloader</h3>
+                <p>ดาวน์โหลดไฟล์จากเซิร์ฟเวอร์</p>
+            </div>
         </div>
     </div>
     <div id="resume-page"   class="page-content"><iframe src="personal.html"></iframe></div>
@@ -269,6 +281,8 @@
     <div id="live-page"     class="page-content"><iframe src="cctv.html"></iframe></div>
     <div id="calendar-page" class="page-content"><iframe src="calendar.html"></iframe></div>
     <div id="qrcode-page"   class="page-content"><iframe src="qrcode.html"></iframe></div>
+    <div id="automove-page" class="page-content"><iframe src="http://100.112.249.105:5000/"></iframe></div>
+    <div id="downloader-page" class="page-content"><iframe src="http://100.112.249.105:5555/"></iframe></div>
 
 </div>
 
