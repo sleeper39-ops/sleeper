@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>สร้าง QR Code จากลิงก์</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #3498db;
+            --success: #27ae60;
+            --danger: #e74c3c;
+            --bg: #f0f2f5;
+            --text-main: #2c3e50;
+            --text-sub: #7f8c8d;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background: var(--bg);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 32px 20px;
+            overflow-y: auto;
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+        .page-header h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .page-header h1 i { color: var(--primary); }
+        .page-header p {
+            color: var(--text-sub);
+            margin-top: 6px;
+            font-size: 15px;
+        }
+
+        .qr-panel {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 6px 24px rgba(0,0,0,0.06);
+            padding: 32px;
+            width: 100%;
+            max-width: 520px;
+            border: 1px solid rgba(0,0,0,0.04);
+        }
+
+        .input-group { margin-bottom: 20px; }
+        .input-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-sub);
+            margin-bottom: 8px;
+        }
+        .input-row {
+            display: flex;
+            gap: 10px;
+        }
+        .input-row input {
+            flex: 1;
+            padding: 12px 14px;
+            border: 1px solid #dce1e6;
+            border-radius: 10px;
+            font-size: 15px;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .input-row input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(52,152,219,0.15);
+        }
+
+        .options-row {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .option-item {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            flex: 1;
+            min-width: 120px;
+        }
+        .option-item label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-sub);
+        }
+        .option-item select {
+            padding: 10px 12px;
+            border: 1px solid #dce1e6;
+            border-radius: 10px;
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+            background: white;
+            cursor: pointer;
+        }
+        .option-item select:focus {
+            border-color: var(--primary);
+        }
+
+        .btn-generate {
+            width: 100%;
+            padding: 13px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-generate:hover {
+            background: #2980b9;
+            transform: translateY(-1px);
+        }
+
+        .qr-result {
+            margin-top: 28px;
+            text-align: center;
+            display: none;
+        }
+        .qr-result.visible { display: block; }
+
+        .qr-canvas-wrap {
+            display: inline-flex;
+            padding: 16px;
+            background: white;
+            border: 2px dashed #e0e6ed;
+            border-radius: 16px;
+            margin-bottom: 16px;
+        }
+        #qr-output { display: block; line-height: 0; }
+        #qr-output canvas, #qr-output img { display: block; border-radius: 4px; }
+
+        .qr-url-preview {
+            font-size: 13px;
+            color: var(--text-sub);
+            word-break: break-all;
+            margin-bottom: 16px;
+            padding: 0 8px;
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .btn-action {
+            padding: 10px 18px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+        .btn-download {
+            background: var(--success);
+            color: white;
+        }
+        .btn-download:hover { background: #219a52; }
+        .btn-copy {
+            background: #ecf0f1;
+            color: var(--text-main);
+        }
+        .btn-copy:hover { background: #dde4e6; }
+        .btn-clear {
+            background: #fdecea;
+            color: var(--danger);
+        }
+        .btn-clear:hover { background: var(--danger); color: white; }
+
+        .error-msg {
+            color: var(--danger);
+            font-size: 13px;
+            margin-top: 8px;
+            display: none;
+        }
+        .error-msg.visible { display: block; }
+
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(80px);
+            background: #2c3e50;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            opacity: 0;
+            transition: transform 0.3s, opacity 0.3s;
+            pointer-events: none;
+            z-index: 100;
+        }
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        @media (max-width: 480px) {
+            .qr-panel { padding: 20px; }
+            .input-row { flex-direction: column; }
+            .action-btns { flex-direction: column; }
+            .btn-action { justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="page-header">
+        <h1><i class="fas fa-qrcode"></i> สร้าง QR Code</h1>
+        <p>วางลิงก์แล้วกดสร้าง QR Code เพื่อแชร์หรือดาวน์โหลด</p>
+    </div>
+
+    <div class="qr-panel">
+        <div class="input-group">
+            <label for="url-input">ลิงก์ / URL</label>
+            <div class="input-row">
+                <input type="url" id="url-input" placeholder="https://example.com" autocomplete="off">
+            </div>
+            <div class="error-msg" id="error-msg"></div>
+        </div>
+
+        <div class="options-row">
+            <div class="option-item">
+                <label for="size-select">ขนาด</label>
+                <select id="size-select">
+                    <option value="200">200 × 200</option>
+                    <option value="256" selected>256 × 256</option>
+                    <option value="320">320 × 320</option>
+                    <option value="400">400 × 400</option>
+                </select>
+            </div>
+            <div class="option-item">
+                <label for="color-select">สี QR</label>
+                <select id="color-select">
+                    <option value="#000000" selected>ดำ</option>
+                    <option value="#2c3e50">เทาเข้ม</option>
+                    <option value="#3498db">น้ำเงิน</option>
+                    <option value="#27ae60">เขียว</option>
+                    <option value="#9b59b6">ม่วง</option>
+                </select>
+            </div>
+        </div>
+
+        <button class="btn-generate" id="btn-generate">
+            <i class="fas fa-magic"></i> สร้าง QR Code
+        </button>
+
+        <div class="qr-result" id="qr-result">
+            <div class="qr-canvas-wrap">
+                <div id="qr-output"></div>
+            </div>
+            <div class="qr-url-preview" id="url-preview"></div>
+            <div class="action-btns">
+                <button class="btn-action btn-download" id="btn-download">
+                    <i class="fas fa-download"></i> ดาวน์โหลด PNG
+                </button>
+                <button class="btn-action btn-copy" id="btn-copy">
+                    <i class="fas fa-copy"></i> คัดลอกลิงก์
+                </button>
+                <button class="btn-action btn-clear" id="btn-clear">
+                    <i class="fas fa-trash-alt"></i> ล้าง
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script>
+        var urlInput = document.getElementById('url-input');
+        var sizeSelect = document.getElementById('size-select');
+        var colorSelect = document.getElementById('color-select');
+        var btnGenerate = document.getElementById('btn-generate');
+        var qrResult = document.getElementById('qr-result');
+        var qrOutput = document.getElementById('qr-output');
+        var urlPreview = document.getElementById('url-preview');
+        var errorMsg = document.getElementById('error-msg');
+        var btnDownload = document.getElementById('btn-download');
+        var btnCopy = document.getElementById('btn-copy');
+        var btnClear = document.getElementById('btn-clear');
+        var toast = document.getElementById('toast');
+
+        var currentUrl = '';
+        var qrInstance = null;
+
+        function showToast(msg) {
+            toast.textContent = msg;
+            toast.classList.add('show');
+            setTimeout(function() { toast.classList.remove('show'); }, 2200);
+        }
+
+        function showError(msg) {
+            errorMsg.textContent = msg;
+            errorMsg.classList.add('visible');
+        }
+
+        function hideError() {
+            errorMsg.classList.remove('visible');
+        }
+
+        if (typeof QRCode === 'undefined') {
+            showError('โหลดไลบรารี QR Code ไม่สำเร็จ กรุณารีเฟรชหน้าเว็บ');
+            btnGenerate.disabled = true;
+        }
+
+        function normalizeUrl(raw) {
+            var trimmed = raw.trim();
+            if (!trimmed) return '';
+            if (!/^https?:\/\//i.test(trimmed)) {
+                trimmed = 'https://' + trimmed;
+            }
+            try {
+                new URL(trimmed);
+                return trimmed;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function getQrImageElement() {
+            return qrOutput.querySelector('canvas') || qrOutput.querySelector('img');
+        }
+
+        function generateQR() {
+            if (typeof QRCode === 'undefined') {
+                showError('โหลดไลบรารี QR Code ไม่สำเร็จ กรุณารีเฟรชหน้าเว็บ');
+                return;
+            }
+
+            hideError();
+            var url = normalizeUrl(urlInput.value);
+            if (!url) {
+                showError('กรุณาใส่ลิงก์ที่ถูกต้อง (เช่น https://example.com)');
+                qrResult.classList.remove('visible');
+                return;
+            }
+
+            var size = parseInt(sizeSelect.value, 10);
+            var color = colorSelect.value;
+
+            qrOutput.innerHTML = '';
+            qrInstance = new QRCode(qrOutput, {
+                text: url,
+                width: size,
+                height: size,
+                colorDark: color,
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.M
+            });
+
+            currentUrl = url;
+            urlPreview.textContent = url;
+            qrResult.classList.add('visible');
+        }
+
+        btnGenerate.addEventListener('click', generateQR);
+
+        urlInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') generateQR();
+        });
+
+        btnDownload.addEventListener('click', function() {
+            if (!currentUrl) return;
+            var el = getQrImageElement();
+            if (!el) {
+                showToast('ไม่พบ QR Code ให้ดาวน์โหลด');
+                return;
+            }
+            var link = document.createElement('a');
+            link.download = 'qrcode.png';
+            link.href = el.tagName === 'CANVAS'
+                ? el.toDataURL('image/png')
+                : el.src;
+            link.click();
+            showToast('ดาวน์โหลดสำเร็จ');
+        });
+
+        btnCopy.addEventListener('click', function() {
+            if (!currentUrl) return;
+            navigator.clipboard.writeText(currentUrl).then(function() {
+                showToast('คัดลอกลิงก์แล้ว');
+            }).catch(function() {
+                showToast('ไม่สามารถคัดลอกได้');
+            });
+        });
+
+        btnClear.addEventListener('click', function() {
+            urlInput.value = '';
+            currentUrl = '';
+            qrOutput.innerHTML = '';
+            qrInstance = null;
+            qrResult.classList.remove('visible');
+            hideError();
+            urlInput.focus();
+        });
+
+        sizeSelect.addEventListener('change', function() {
+            if (currentUrl) generateQR();
+        });
+        colorSelect.addEventListener('change', function() {
+            if (currentUrl) generateQR();
+        });
+    </script>
+</body>
+</html>
